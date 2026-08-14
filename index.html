@@ -1,0 +1,3311 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل طريق الحديد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cinzel+Decorative:wght@700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #05070b;
+    --ink-2: #0a101a;
+    --page: #dce7f2;
+    --page-2: #b9c9d8;
+    --ember: #285f91;
+    --ember-bright: #4d9bd0;
+    --blood: #122b49;
+    --gold: #78b7e6;
+    --wolf: #8d9eaf;
+    --wolf-dim: #526273;
+    --ok-green: #5f9b78;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--ink);
+    color: var(--page);
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    min-height: 100vh;
+  }
+
+  html[dir="ltr"] body{ font-family: 'EB Garamond', 'Noto Naskh Arabic', serif; }
+  html[dir="ltr"] .player-line{ border-left:0; border-right:2px solid var(--ember); padding:4px 16px 4px 0; margin:0 20px 18px 0; }
+  html[dir="ltr"] .system-panel{ border-left:1px solid #1b2a3a; border-right:3px solid var(--gold); margin-left:0; margin-right:20px; }
+  html[dir="ltr"] .page{ margin-left:0; margin-right:20px; }
+  html[dir="ltr"] .page::before{ left:auto; right:0; }
+
+  body{
+    background:
+      radial-gradient(ellipse 1000px 520px at 50% -10%, rgba(40,95,145,0.20), transparent 62%),
+      radial-gradient(ellipse 650px 450px at 85% 20%, rgba(18,43,73,0.24), transparent 62%),
+      var(--ink);
+    background-attachment: fixed;
+  }
+
+  /* ambient embers */
+  #embers{
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .ember-particle{
+    position: absolute;
+    bottom: -10px;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: var(--ember-bright);
+    box-shadow: 0 0 6px 1px rgba(224,138,69,0.8);
+    opacity: 0;
+    animation: rise linear infinite;
+  }
+  @keyframes rise{
+    0%{ transform: translateY(0) translateX(0); opacity: 0; }
+    8%{ opacity: 0.9; }
+    90%{ opacity: 0.4; }
+    100%{ transform: translateY(-105vh) translateX(var(--drift, 20px)); opacity: 0; }
+  }
+
+  .wrap{
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 46px 24px 140px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .sigil{
+    width: 72px; height: 84px;
+    margin: 0 auto 14px;
+    opacity: 0.95;
+    filter: drop-shadow(0 0 12px rgba(40,95,145,0.35));
+  }
+  h1{
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    font-weight: 700;
+    font-size: clamp(28px, 5vw, 42px);
+    letter-spacing: 1.5px;
+    margin: 0;
+    color: var(--page);
+    text-shadow: 0 0 24px rgba(40,95,145,0.25);
+  }
+  .subtitle{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--wolf);
+    margin-top: 10px;
+  }
+  .rule{
+    width: 220px;
+    height: 1px;
+    margin: 22px auto 34px;
+    background: linear-gradient(90deg, transparent, var(--ember), var(--gold), var(--ember), transparent);
+    opacity: 0.65;
+  }
+
+  /* ---------- Status strip ---------- */
+  .status-strip{
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--wolf);
+  }
+  .status-strip span.dot{
+    display:inline-block; width:6px; height:6px; border-radius:50%;
+    background: var(--ok-green); margin-right: 7px;
+    box-shadow: 0 0 6px var(--ok-green);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:.5;} 50%{opacity:1;} }
+
+  /* ---------- Game log ---------- */
+  #game{ display:flex; flex-direction: column; gap: 30px; }
+
+  .turn{
+    position: relative;
+    animation: settle 0.5s ease both;
+  }
+  @keyframes settle{
+    from{ opacity: 0; transform: translateY(10px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .turn-marker{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .seal{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--ink);
+    background: radial-gradient(circle at 35% 30%, var(--ember-bright), var(--blood) 75%);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 2px rgba(120,183,230,0.35), 0 3px 10px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+  }
+  .turn-line{
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--wolf-dim), transparent);
+  }
+
+  .player-line{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ember-bright);
+    border-left: 2px solid var(--ember);
+    padding: 4px 0 4px 16px;
+    margin: 0 0 18px 20px;
+    line-height: 1.55;
+  }
+  .player-line::before{
+    content: "قرارك —";
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--wolf);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .page{
+    position: relative;
+    background:
+      linear-gradient(180deg, var(--page) 0%, var(--page-2) 100%);
+    color: #0a111b;
+    border-radius: 3px;
+    padding: 30px 34px;
+    margin-left: 20px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.4) inset,
+      0 18px 40px -14px rgba(0,0,0,0.65),
+      0 0 0 1px rgba(0,0,0,0.35);
+    font-size: 18px;
+    line-height: 1.75;
+  }
+  .page::before{
+    content: "";
+    position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+    background: linear-gradient(180deg, var(--ember), var(--blood));
+    border-radius: 2px;
+    opacity: 0.8;
+  }
+  .page p{ margin: 0 0 14px; }
+  .page p:last-child{ margin-bottom: 0; }
+
+  .system-panel{
+    position: relative;
+    background: var(--ink-2);
+    color: var(--wolf);
+    border: 1px solid #1b2a3a;
+    border-left: 3px solid var(--gold);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-left: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  .system-panel .tag{
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    opacity: 0.85;
+  }
+  .system-panel.error{
+    border-left-color: var(--blood);
+  }
+  .system-panel.error .tag{ color: #d9776f; }
+
+  .command-line{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--gold);
+    border-left: 2px solid var(--gold);
+    padding: 4px 0 4px 16px;
+    margin: 0 0 18px 20px;
+    line-height: 1.5;
+    opacity: 0.9;
+  }
+  .command-line::before{
+    content: "COMMAND —";
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--wolf);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .thinking{
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; letter-spacing: 1px;
+    color: var(--wolf);
+    padding: 4px 0;
+  }
+  .thinking-timer{
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: .5px;
+    white-space: nowrap;
+  }
+  .flame{
+    width: 12px; height: 14px;
+    display: inline-block;
+    background: radial-gradient(circle at 50% 70%, var(--ember-bright), var(--blood) 70%, transparent 100%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: flicker 0.9s ease-in-out infinite alternate;
+    transform-origin: 50% 100%;
+  }
+  @keyframes flicker{
+    0%{ transform: scale(1) rotate(-2deg); opacity: 0.85; }
+    100%{ transform: scale(1.15, 1.25) rotate(3deg); opacity: 1; }
+  }
+
+  .cursor{
+    display: inline-block;
+    width: 2px; height: 1.1em;
+    background: var(--blood);
+    vertical-align: text-bottom;
+    margin-left: 1px;
+    animation: blink 0.9s step-start infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0; } }
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--wolf);
+    font-style: italic;
+    font-size: 17px;
+  }
+
+  /* ---------- Input dock ---------- */
+  /* ---------- Map modal ---------- */
+  .map-overlay{
+    position: fixed; inset: 0;
+    overflow: hidden;
+    background: rgba(8,6,5,0.86);
+    backdrop-filter: blur(2px);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .map-overlay.open{ display: flex; opacity: 1; }
+
+  .map-panel{
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 920px;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, var(--page) 0%, var(--page-2) 100%);
+    border-radius: 6px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.4);
+    padding: 26px 26px 20px;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.2s ease;
+  }
+  .map-overlay.open .map-panel{ transform: translateY(0) scale(1); }
+
+  .map-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .map-title{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #0a111b;
+  }
+  .map-close{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #6e8194;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .map-close:hover{ background: rgba(0,0,0,0.12); }
+
+  #map-svg{ width: 100%; height: auto; display: block; }
+
+  .map-pin{ cursor: pointer; }
+  .map-pin circle.pin-glow{ opacity: 0; transition: opacity 0.15s ease; }
+  .map-pin:hover circle.pin-glow{ opacity: 0.35; }
+  .map-pin:hover circle.pin-dot{ r: 7; }
+  .map-pin circle.pin-dot{ transition: r 0.15s ease; }
+  .map-pin.current circle.pin-dot{ fill: var(--blood); }
+  .map-pin.current circle.pin-glow{ opacity: 0.5; fill: var(--blood); }
+
+  .map-label{
+    font-family: 'Cinzel', serif;
+    font-size: 11.5px;
+    fill: #2c2415;
+    pointer-events: none;
+  }
+  .map-sublabel{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 10px;
+    fill: #607487;
+    pointer-events: none;
+  }
+
+  .map-tooltip{
+    position: absolute;
+    pointer-events: none;
+    background: var(--ink-2);
+    color: var(--page);
+    border: 1px solid var(--ember);
+    border-radius: 6px;
+    padding: 10px 13px;
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-size: 14px;
+    max-width: 240px;
+    line-height: 1.45;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translate(-50%, -110%);
+    transition: opacity 0.12s ease;
+    z-index: 60;
+  }
+  .map-tooltip.show{ opacity: 1; }
+  .map-tooltip .mt-title{
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--ember-bright);
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .map-legend{
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.12);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: #607487;
+  }
+  .map-legend span{ display: flex; align-items: center; gap: 6px; }
+  .legend-dot{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .atlas-subtitle{
+    margin: -7px 0 14px;
+    color: #607487;
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .atlas-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px; }
+  .atlas-filters{ display:flex; flex-wrap:wrap; gap:6px; }
+  .atlas-filter{
+    border:1px solid rgba(41,58,71,.22); border-radius:999px; padding:5px 9px;
+    background:rgba(255,255,255,.42); color:#385066; cursor:pointer;
+    font-family:'Noto Naskh Arabic', serif; font-size:12px;
+  }
+  .atlas-filter:hover, .atlas-filter.active{ background:#243c4b; color:#f4ead1; border-color:#243c4b; }
+  .atlas-count{ color:#607487; font-family:'JetBrains Mono',monospace; font-size:10px; white-space:nowrap; }
+  .atlas-shell{ display:grid; grid-template-columns:minmax(0,1fr) minmax(255px,300px); gap:16px; align-items:stretch; min-width:0; }
+  .atlas-stage{ position:relative; isolation:isolate; min-width:0; overflow:hidden; overscroll-behavior:contain; aspect-ratio:16 / 9; min-height:300px; border:1px solid rgba(45,36,20,.32); border-radius:7px; background:#d7c496; box-shadow:inset 0 0 26px rgba(66,41,16,.22), 0 10px 24px rgba(33,27,17,.14); cursor:grab; touch-action:none; user-select:none; }
+  .atlas-stage.is-panning{ cursor:grabbing; }
+  #map-svg{ width:100%; height:100%; display:block; min-height:0; transform-origin:50% 50%; transition:transform .16s ease-out; will-change:transform; user-select:none; -webkit-user-select:none; -webkit-user-drag:none; }
+  #map-svg image{ pointer-events:auto; user-select:none; -webkit-user-select:none; -webkit-user-drag:none; }
+  #map-svg{ background:#a8c8cf; }
+  #map-svg .map-raster-layer{ display:none; pointer-events:auto; }
+  #map-svg .map-vector-art{ display:none; }
+  #map-svg.raster-mode .map-raster-layer{ display:block; }
+  #map-svg.raster-mode .map-vector-art{ display:none; }
+  #map-svg:not(.raster-mode) .map-vector-art{ display:block; }
+  .map-vector-art{ pointer-events:none; }
+  .vector-sea{ fill:#a8c8cf; }
+  .vector-land{ fill:#d9c894; stroke:#6f5b3b; stroke-width:12; stroke-linejoin:round; }
+  .vector-land-shadow{ fill:#b9a874; opacity:.32; }
+  .vector-region{ stroke:#9a8355; stroke-width:5; stroke-dasharray:18 14; opacity:.31; }
+  .vector-region.crownlands{ fill:#d9b773; }
+  .vector-region.eastern{ fill:#c6d08e; }
+  .vector-region.coast{ fill:#b7caa0; }
+  .vector-region.far{ fill:#d0b0a0; }
+  .vector-region.southern{ fill:#d3b879; }
+  .vector-region.frost{ fill:#b8d1cf; }
+  .vector-region.ashvale{ fill:#d2a678; }
+  .vector-region.greywood{ fill:#8eae86; }
+  .vector-region.wolf{ fill:#b89d9a; }
+  .vector-water{ fill:#77a9b4; stroke:#476f78; stroke-width:8; opacity:.94; }
+  .vector-river{ fill:none; stroke:#5e929d; stroke-width:12; stroke-linecap:round; opacity:.88; }
+  .vector-river-minor{ fill:none; stroke:#81b5ba; stroke-width:6; stroke-linecap:round; opacity:.9; }
+  .vector-road{ fill:none; stroke:#a37b47; stroke-width:10; stroke-linecap:round; stroke-dasharray:28 20; opacity:.76; }
+  .vector-road-minor{ fill:none; stroke:#b89561; stroke-width:6; stroke-linecap:round; stroke-dasharray:14 16; opacity:.7; }
+  .vector-mountain{ fill:#726851; stroke:#4c4639; stroke-width:6; stroke-linejoin:round; opacity:.92; }
+  .vector-mountain-light{ fill:#c9bd99; opacity:.88; }
+  .vector-forest{ fill:#426b55; stroke:#2f513f; stroke-width:5; opacity:.72; }
+  .vector-ruin{ fill:#82756d; stroke:#4d443e; stroke-width:7; opacity:.76; }
+  .vector-coastline{ fill:none; stroke:#f1dfae; stroke-width:12; opacity:.78; }
+  .vector-compass{ fill:#405c69; stroke:#e5d5a2; stroke-width:6; opacity:.9; }
+  .atlas-style-control{ width:auto; min-width:82px; padding:0 9px; font-size:10px; white-space:nowrap; }
+  .atlas-stage.is-panning #map-svg, .atlas-stage.is-panning .map-pin{ transition:none; cursor:grabbing; }
+  .atlas-map-controls{ position:absolute; z-index:5; top:12px; inset-inline-start:12px; display:flex; align-items:center; gap:5px; padding:5px; border:1px solid rgba(16,30,39,.20); border-radius:8px; background:rgba(244,238,216,.90); box-shadow:0 6px 16px rgba(31,25,16,.18); backdrop-filter:blur(5px); }
+  .atlas-map-control{ width:31px; height:29px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(24,48,61,.20); border-radius:5px; color:#203c4d; background:rgba(255,255,255,.55); cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:16px; line-height:1; }
+  .atlas-map-control:hover{ color:#fff7e6; background:#285f91; border-color:#285f91; }
+  .atlas-map-control.reset{ width:auto; padding:0 8px; font-size:10px; letter-spacing:.3px; }
+  .atlas-zoom-readout{ min-width:42px; text-align:center; color:#4f6672; font-family:'JetBrains Mono',monospace; font-size:10px; }
+  .atlas-nav-hint{ position:absolute; z-index:4; bottom:10px; inset-inline-end:12px; padding:5px 8px; border-radius:5px; background:rgba(9,21,29,.76); color:#e3edf3; font-family:'Noto Naskh Arabic','EB Garamond',serif; font-size:11px; pointer-events:none; opacity:.94; }
+  .map-region-label{ font-family:'Noto Naskh Arabic','EB Garamond',serif; font-weight:700; font-size:18px; fill:#342b1d; opacity:.69; pointer-events:none; paint-order:stroke; stroke:#e9dfc3; stroke-width:3px; stroke-opacity:.48; }
+  .map-pin{ cursor:grab; }
+  .map-pin circle.pin-glow{ opacity:0; transition:opacity .15s ease; }
+  .map-pin:hover circle.pin-glow, .map-pin.selected circle.pin-glow{ opacity:.50; }
+  .map-pin:hover circle.pin-dot{ r:8; }
+  .map-pin circle.pin-dot{ transition:r .15s ease; }
+  .map-pin.current circle.pin-dot{ fill:var(--blood); }
+  .map-pin.current circle.pin-glow{ opacity:.58; fill:var(--blood); }
+  .map-pin.undiscovered{ opacity:.70; }
+  .map-pin.dynamic circle.pin-dot{ stroke:#f1c76d; stroke-width:2; }
+  .map-label{ font-family:'Noto Naskh Arabic','EB Garamond',serif; font-size:14px; fill:#201a12; pointer-events:none; paint-order:stroke; stroke:#eadbb8; stroke-width:3px; stroke-opacity:.85; }
+  .atlas-sidebar{ border:1px solid rgba(45,36,20,.16); background:linear-gradient(180deg,rgba(255,255,255,.56),rgba(234,225,199,.48)); border-radius:7px; padding:15px; min-height:300px; max-height:calc(56.25vw - 10px); overflow:auto; box-shadow:inset 0 1px rgba(255,255,255,.55); scrollbar-color:#7893a5 transparent; }
+  .atlas-sidebar:empty::before{ content:'…'; color:#607487; }
+  .atlas-detail-kicker{ color:#7a2320; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.7px; text-transform:uppercase; }
+  .atlas-detail-title{ color:#172b38; font-family:'Noto Naskh Arabic','Cinzel',serif; font-weight:700; font-size:20px; line-height:1.2; margin:5px 0 7px; }
+  .atlas-detail-text{ color:#3b4c59; font-family:'Noto Naskh Arabic','EB Garamond',serif; font-size:14px; line-height:1.55; }
+  .atlas-detail-meta{ color:#738494; font-family:'JetBrains Mono',monospace; font-size:9px; margin-top:10px; line-height:1.6; }
+  .atlas-action{ margin-top:12px; border:0; background:#7a2320; color:#fff5e0; border-radius:4px; padding:7px 9px; cursor:pointer; font-family:'Noto Naskh Arabic',serif; font-size:12px; }
+  .atlas-action:hover{ background:#5f1918; }
+  .atlas-list-title{ color:#172b38; font-family:'Cinzel',serif; font-size:10px; letter-spacing:1px; margin:14px 0 7px; border-top:1px solid rgba(45,36,20,.14); padding-top:12px; }
+  .atlas-entry{ border-bottom:1px solid rgba(45,36,20,.10); padding:7px 0; }
+  .atlas-entry:last-child{ border-bottom:0; }
+  .atlas-entry-title{ color:#263c4a; font-family:'Noto Naskh Arabic',serif; font-weight:700; font-size:14px; }
+  .atlas-entry-meta{ color:#71808d; font-family:'Noto Naskh Arabic',serif; font-size:11.5px; line-height:1.35; }
+  .atlas-entry.secret{ opacity:.72; }
+  html[dir="ltr"] .atlas-detail-kicker, html[dir="ltr"] .atlas-detail-meta, html[dir="ltr"] .atlas-entry-meta{ font-family:'EB Garamond','Noto Naskh Arabic',serif; }
+  @media (max-width: 780px){
+    .map-panel{ padding:18px 16px 14px; max-width:680px; }
+    .atlas-shell{ grid-template-columns:1fr; }
+    .atlas-stage{ min-height:260px; }
+    .atlas-sidebar{ min-height:0; max-height:270px; }
+  }
+  @media (max-width: 600px){
+    .map-panel{ padding: 18px 12px 14px; }
+    .map-title{ font-size: 15px; }
+    .atlas-toolbar{ align-items:flex-start; flex-direction:column; }
+    .atlas-count{ white-space:normal; }
+  }
+
+  /* ---------- Event panel (decisive/important turns) ---------- */
+  .event-panel{
+    position: relative;
+    margin: 18px 0 18px 20px;
+    background:
+      linear-gradient(180deg, #0a111b 0%, #0b1420 100%);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 22px 26px;
+    box-shadow: 0 20px 50px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(120,183,230,0.15);
+    animation: event-in 0.5s ease both;
+  }
+  @keyframes event-in{
+    from{ opacity: 0; transform: scale(0.97) translateY(6px); }
+    to{ opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .event-panel::before{
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 6px;
+    padding: 1px;
+    background: linear-gradient(120deg, var(--gold), transparent 40%, transparent 60%, var(--ember));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .event-seal{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .event-seal .es-dot{
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+  }
+  .event-title{
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: 0.5px;
+    color: var(--page);
+    margin: 0 0 12px;
+    text-shadow: 0 0 20px rgba(120,183,230,0.25);
+  }
+  .event-summary{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 15.5px;
+    color: #b8c8d8;
+    line-height: 1.6;
+    margin: 0 0 16px;
+  }
+  .event-consequences{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--wolf);
+    border-top: 1px solid rgba(120,183,230,0.2);
+    padding-top: 12px;
+  }
+  .event-consequences .ec-item{ color: #b8c8d8; }
+  .event-consequences .ec-pos{ color: #77ad91; }
+  .event-consequences .ec-neg{ color: #8bb4d4; }
+
+  /* ---------- Action chips ---------- */
+  .action-chips{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 16px;
+  }
+  .action-chip{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-size: 14px;
+    color: var(--page);
+    background: rgba(40,95,145,0.10);
+    border: 1px solid rgba(40,95,145,0.4);
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .action-chip:hover{
+    background: rgba(40,95,145,0.22);
+    border-color: var(--ember-bright);
+  }
+  .action-chip:active{ transform: scale(0.97); }
+  .action-chip .risk-tag{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.85;
+  }
+  .risk-low{ background: rgba(92,122,79,0.3); color: #a8c795; }
+  .risk-medium{ background: rgba(120,183,230,0.25); color: #a8cbe8; }
+  .risk-high, .risk-very_high{ background: rgba(122,35,32,0.3); color: #d99388; }
+
+  /* ---------- Audio toggle ---------- */
+  .audio-toggle{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--wolf);
+    background: transparent;
+    border: 1px solid #1b2a3a;
+    border-radius: 20px;
+    padding: 6px 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .audio-toggle:hover{ color: var(--page); border-color: var(--gold); }
+  .audio-toggle.muted{ opacity: 0.55; }
+
+  .toast-stack{
+    position: fixed;
+    top: 20px; right: 20px;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .level-toast{
+    background: linear-gradient(135deg, var(--ember-bright), var(--blood));
+    color: #e8f4ff;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(120,183,230,0.4);
+    animation: toast-in 0.35s ease both, toast-out 0.4s ease 4.2s both;
+    max-width: 280px;
+  }
+  .level-toast .lt-sub{
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    opacity: 0.85;
+    margin-top: 3px;
+  }
+  @keyframes toast-in{
+    from{ opacity: 0; transform: translateX(30px); }
+    to{ opacity: 1; transform: translateX(0); }
+  }
+  @keyframes toast-out{
+    from{ opacity: 1; }
+    to{ opacity: 0; transform: translateX(30px); }
+  }
+
+  /* ---------- Hall launch button ---------- */
+  .hall-launch{
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .hall-btn{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(40,95,145,0.14), rgba(18,43,73,0.20));
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 14px 26px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.6);
+  }
+  .hall-btn:hover{
+    transform: translateY(-1px);
+    border-color: var(--ember-bright);
+    box-shadow: 0 14px 36px -10px rgba(0,0,0,0.7);
+  }
+  .hall-btn:active{ transform: translateY(0) scale(0.99); }
+  .hall-btn-icon{
+    font-size: 26px;
+    color: var(--gold);
+    text-shadow: 0 0 12px rgba(120,183,230,0.5);
+  }
+  .hall-btn-text{ text-align: left; }
+  .hall-btn-title{
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    color: var(--page);
+  }
+  .hall-btn-sub{
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--wolf);
+    margin-top: 3px;
+  }
+
+  /* ---------- Hall dashboard modal ---------- */
+  .hall-overlay{
+    position: fixed; inset: 0;
+    background: rgba(8,6,5,0.88);
+    backdrop-filter: blur(2px);
+    z-index: 55;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .hall-overlay.open{ display: flex; opacity: 1; }
+
+  .hall-panel{
+    position: relative;
+    width: 100%;
+    max-width: 980px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #09121d 0%, #060c14 100%);
+    border: 1px solid #1b2a3a;
+    border-radius: 10px;
+    box-shadow: 0 40px 90px rgba(0,0,0,0.7), 0 0 0 1px rgba(120,183,230,0.08);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.2s ease;
+    overflow: hidden;
+  }
+  .hall-overlay.open .hall-panel{ transform: translateY(0) scale(1); }
+
+  .hall-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid #172535;
+    flex-shrink: 0;
+  }
+  .hall-header-title{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: var(--page);
+  }
+  .hall-close{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--wolf);
+    background: transparent;
+    border: 1px solid #1b2a3a;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .hall-close:hover{ color: var(--page); border-color: var(--gold); }
+
+  .hall-tabs{
+    display: flex;
+    gap: 4px;
+    padding: 10px 18px 0;
+    border-bottom: 1px solid #172535;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .hall-tab{
+    font-family: 'Cinzel', serif;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    color: var(--wolf);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .hall-tab:hover{ color: var(--page); }
+  .hall-tab.active{ color: var(--ember-bright); border-bottom-color: var(--ember); }
+
+  .hall-body{
+    padding: 22px 24px 28px;
+    overflow-y: auto;
+    color: var(--page);
+  }
+  .hall-panel-loading{
+    text-align: center;
+    color: var(--wolf);
+    font-style: italic;
+    padding: 40px 0;
+  }
+
+  /* ---------- Stat bars (shared) ---------- */
+  .stat-row{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+  }
+  .stat-row-label{
+    width: 100px;
+    flex-shrink: 0;
+    color: var(--wolf);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .stat-bar-track{
+    flex: 1;
+    height: 7px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .stat-bar-fill{
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .stat-row-value{
+    width: 34px;
+    flex-shrink: 0;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--page);
+  }
+
+  /* ---------- Hall cards grid ---------- */
+  .hall-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .hall-card{
+    background: rgba(255,255,255,0.025);
+    border: 1px solid #172535;
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .hall-card-header{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .hall-card-title{
+    font-family: 'Cinzel', serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--page);
+  }
+  .hall-card-tag{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.85;
+  }
+  .hall-card-desc{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--wolf);
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  .hall-card-meta{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--wolf);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #172535;
+  }
+
+  /* ---------- Character tab specifics ---------- */
+  .character-directory-toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .character-directory-intro{
+    color:var(--wolf);
+    font-family:'Noto Naskh Arabic','EB Garamond',serif;
+    font-size:13px;
+    line-height:1.5;
+    margin:0;
+  }
+  .character-directory-filter{
+    min-height:40px;
+    border:1px solid #29415a;
+    border-radius:7px;
+    background:#08111c;
+    color:var(--page);
+    padding:8px 12px;
+    font:12px 'Noto Naskh Arabic','EB Garamond',serif;
+  }
+  .character-directory-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    gap:14px;
+  }
+  .directory-card{
+    min-width:0;
+    background:linear-gradient(145deg,rgba(120,183,230,.08),rgba(255,255,255,.025));
+    border:1px solid #29415a;
+    border-radius:10px;
+    padding:14px;
+    transition:border-color .16s ease,transform .16s ease,background .16s ease;
+  }
+  .directory-card:hover{ border-color:var(--ember-bright); transform:translateY(-2px); background:rgba(120,183,230,.11); }
+  .directory-card-header{ display:flex; align-items:flex-start; gap:12px; min-width:0; }
+  .directory-avatar{
+    width:60px; height:60px; flex:0 0 60px; object-fit:cover; object-position:center;
+    border-radius:8px; border:1px solid rgba(120,183,230,.55); background:#203140;
+  }
+  .directory-avatar-placeholder{
+    display:flex; align-items:center; justify-content:center; color:var(--gold);
+    font:700 22px 'Cinzel',serif;
+  }
+  .directory-identity{ min-width:0; flex:1; }
+  .directory-name{ color:var(--page); font:600 15px 'Cinzel','Noto Naskh Arabic',serif; overflow-wrap:anywhere; }
+  .directory-title{ color:var(--gold); font:12px 'Noto Naskh Arabic','EB Garamond',serif; margin-top:3px; }
+  .directory-status{
+    display:inline-flex; align-items:center; gap:5px; margin-top:7px; padding:3px 7px; border-radius:12px;
+    border:1px solid rgba(120,183,230,.35); color:var(--wolf); font:10px 'JetBrains Mono',monospace;
+  }
+  .directory-status::before{ content:''; width:6px; height:6px; border-radius:50%; background:#78b7e6; }
+  .directory-status[data-status="dead"]::before,.directory-status[data-status="captured"]::before{ background:#b86d64; }
+  .directory-status[data-status="traveling"]::before{ background:#d8b35d; }
+  .directory-bio{ color:var(--wolf); font:italic 12.5px/1.5 'Noto Naskh Arabic','EB Garamond',serif; margin:12px 0 0; }
+  .directory-meta{ border-top:1px solid #172535; margin-top:12px; padding-top:10px; color:var(--wolf); font:10.5px/1.6 'JetBrains Mono','Noto Naskh Arabic',monospace; }
+  .directory-meta strong{ color:var(--page); font-weight:500; }
+  .directory-traits{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+  .directory-trait{ border:1px solid rgba(120,183,230,.3); border-radius:12px; padding:3px 7px; color:var(--wolf); font:10px 'Noto Naskh Arabic','EB Garamond',serif; }
+  .directory-empty{ color:var(--wolf); text-align:center; padding:28px 12px; border:1px dashed #29415a; border-radius:8px; }
+  @media (max-width: 640px){
+    .character-directory-toolbar{ align-items:stretch; flex-direction:column; }
+    .character-directory-filter{ width:100%; }
+    .character-directory-grid{ grid-template-columns:1fr; }
+    .directory-card{ padding:13px; }
+  }
+  .char-summary{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .char-metric{
+    background: rgba(255,255,255,0.025);
+    border: 1px solid #172535;
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .char-metric-value{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ember-bright);
+  }
+  .char-metric-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--wolf);
+    margin-top: 4px;
+  }
+
+  .hall-section-title{
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 22px 0 12px;
+    opacity: 0.85;
+  }
+  .hall-section-title:first-child{ margin-top: 0; }
+
+  .trait-badge{
+    display: inline-flex;
+    flex-direction: column;
+    background: rgba(120,183,230,0.08);
+    border: 1px solid rgba(120,183,230,0.35);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 0 8px 8px 0;
+  }
+  .trait-badge-name{
+    font-family: 'Cinzel', serif;
+    font-size: 12.5px;
+    color: var(--gold);
+  }
+  .trait-badge-desc{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 11.5px;
+    color: var(--wolf);
+    margin-top: 2px;
+    max-width: 220px;
+  }
+
+  .spec-pill{
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 14px;
+    margin: 0 6px 6px 0;
+  }
+  .spec-unlocked{
+    background: rgba(92,122,79,0.2);
+    border: 1px solid rgba(92,122,79,0.5);
+    color: #a8c795;
+  }
+  .spec-locked{
+    background: rgba(255,255,255,0.03);
+    border: 1px solid #172535;
+    color: var(--wolf-dim);
+  }
+
+  /* ---------- Inventory ---------- */
+  .coin-display{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(120,183,230,0.14), rgba(40,95,145,0.08));
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 18px;
+    width: fit-content;
+  }
+  .coin-icon{
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f0d789, var(--gold) 70%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #4a3a10;
+    flex-shrink: 0;
+  }
+  .coin-amount{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 19px;
+    color: var(--gold);
+  }
+  .coin-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--wolf);
+  }
+  .wallet-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 18px; }
+  .wallet-unit{ background:rgba(255,255,255,.025); border:1px solid #172535; border-radius:7px; padding:9px; text-align:center; }
+  .wallet-unit strong{ display:block; font-family:'Cinzel',serif; color:var(--gold); font-size:18px; }
+  .wallet-unit span{ color:var(--wolf); font-family:'Noto Naskh Arabic',serif; font-size:11px; }
+  .market-row{ display:grid; grid-template-columns:1.5fr .7fr .7fr auto; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid #172535; }
+  .market-row:last-child{ border-bottom:0; }
+  .market-name{ color:var(--page); font-family:'Noto Naskh Arabic',serif; font-size:14px; }
+  .market-meta{ color:var(--wolf); font-family:'JetBrains Mono',monospace; font-size:10px; }
+  .trade-controls{ display:flex; gap:5px; align-items:center; justify-content:flex-end; }
+  .trade-controls input{ width:38px; border:1px solid #1b2a3a; border-radius:4px; background:#070d15; color:var(--page); padding:5px; font:11px 'JetBrains Mono',monospace; text-align:center; }
+  .trade-btn{ border:1px solid rgba(120,183,230,.4); border-radius:4px; background:rgba(40,95,145,.16); color:var(--page); cursor:pointer; padding:5px 8px; font:11px 'Noto Naskh Arabic',serif; }
+  .trade-btn.sell{ border-color:rgba(95,155,120,.5); background:rgba(95,155,120,.13); }
+  .trade-btn:hover{ filter:brightness(1.22); }
+  .ledger-row{ display:grid; grid-template-columns:92px 1fr auto; gap:9px; padding:8px 0; border-bottom:1px solid #172535; color:var(--wolf); font:11px 'Noto Naskh Arabic',serif; }
+  .ledger-row .credit{ color:#86c89a; font-family:'JetBrains Mono',monospace; direction:ltr; }
+  .ledger-row .debit{ color:#d99388; font-family:'JetBrains Mono',monospace; direction:ltr; }
+  .asset-art{ width:100%; max-height:155px; object-fit:cover; object-position:center; display:block; border-radius:5px; border:1px solid rgba(45,36,20,.28); margin:0 0 10px; background:#203140; }
+  .lord-mini{ display:flex; gap:8px; align-items:center; margin:7px 0; }
+  .lord-mini img{ width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid rgba(120,183,230,.45); background:#203140; }
+  @media(max-width:600px){ .market-row{ grid-template-columns:1fr auto; } .market-row .market-meta{ display:none; } }
+
+  .item-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .item-card{
+    background: rgba(255,255,255,0.025);
+    border: 1px solid #172535;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .item-icon{
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    background: rgba(40,95,145,0.15);
+    border: 1px solid rgba(40,95,145,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .item-name{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-size: 14px;
+    color: var(--page);
+    line-height: 1.3;
+  }
+  .item-qty{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+  }
+  .item-desc{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 11.5px;
+    color: var(--wolf);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  /* ---------- Skyrim-style item stat rows ---------- */
+  .item-stats{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    margin-top: 8px;
+  }
+  .item-stat{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.04);
+    color: var(--wolf);
+  }
+  .item-stat.stat-damage{ color: #d99388; background: rgba(122,35,32,0.14); }
+  .item-stat.stat-armor{ color: #7fa0a8; background: rgba(40,95,145,0.14); }
+  .item-stat.stat-value{ color: var(--gold); background: rgba(120,183,230,0.10); }
+  .item-stat.stat-effect{ color: #a8c795; background: rgba(92,122,79,0.14); font-style: italic; }
+
+  .item-equip-btn{
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--wolf);
+    background: transparent;
+    border: 1px solid #1b2a3a;
+    border-radius: 5px;
+    padding: 5px 11px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .item-equip-btn:hover{ color: var(--page); border-color: var(--gold); }
+  .item-equip-btn.equipped{
+    color: #0a111b;
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+
+  /* ---------- Equipment slot panel ---------- */
+  .equip-slots{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .equip-slot{
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed #1b2a3a;
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-height: 64px;
+  }
+  .equip-slot.filled{
+    border-style: solid;
+    border-color: rgba(120,183,230,0.4);
+    background: rgba(40,95,145,0.08);
+  }
+  .equip-slot-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--wolf);
+    margin-bottom: 5px;
+  }
+  .equip-slot-item{
+    font-family: 'Cinzel', serif;
+    font-size: 12.5px;
+    color: var(--page);
+  }
+  .equip-slot-empty{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--wolf-dim);
+  }
+
+  /* ---------- Military tab ---------- */
+  .army-card{
+    background: rgba(255,255,255,0.025);
+    border: 1px solid #2a2319;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .army-card-header{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .army-card-title{
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--page);
+  }
+  .army-faction-tag{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 10px;
+  }
+  .faction-player{ background: rgba(40,95,145,0.2); color: #7fb3e0; }
+  .faction-enemy{ background: rgba(122,35,32,0.25); color: #d99388; }
+  .faction-unaligned{ background: rgba(255,255,255,0.06); color: var(--wolf); }
+  .army-meta{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--wolf);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #2a2319;
+  }
+
+  .battle-entry{
+    background: rgba(255,255,255,0.02);
+    border-left: 2px solid var(--gold);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .battle-entry-title{
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--page);
+    margin-bottom: 6px;
+  }
+  .battle-side{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--wolf);
+    margin-bottom: 2px;
+  }
+  .battle-side .casualties{ color: #d99388; }
+  .battle-victor{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 6px;
+  }
+
+  .loot-card{
+    background: rgba(120,183,230,0.06);
+    border: 1px solid rgba(120,183,230,0.3);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .loot-card-header{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .loot-card-title{
+    font-family: 'Cinzel', serif;
+    font-size: 13.5px;
+    color: var(--page);
+  }
+  .loot-card-items{
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-size: 12.5px;
+    color: var(--wolf);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .claim-loot-btn{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #0a111b;
+    background: var(--gold);
+    border: none;
+    border-radius: 5px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  .claim-loot-btn:hover{ filter: brightness(1.1); }
+  .claim-loot-btn:disabled{
+    background: #2a2319;
+    color: var(--wolf-dim);
+    cursor: not-allowed;
+  }
+
+  .hall-empty{
+    text-align: center;
+    color: var(--wolf);
+    font-style: italic;
+    padding: 30px 0;
+  }
+
+  .quick-commands{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .qc-btn{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--wolf);
+    background: var(--ink-2);
+    border: 1px solid #1b2a3a;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .qc-btn .qc-dot{
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .qc-btn:hover{
+    color: var(--page);
+    border-color: var(--gold);
+  }
+  .qc-btn:active{ transform: scale(0.96); }
+
+  .dock{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    display: flex; justify-content: center;
+    padding: 18px 20px 22px;
+    background: linear-gradient(0deg, var(--ink) 40%, rgba(13,11,9,0.92) 75%, transparent);
+  }
+  .dock-inner{
+    width: 100%; max-width: 820px;
+    background: var(--ink-2);
+    border: 1px solid #1b2a3a;
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px rgba(40,95,145,0.08), 0 14px 40px rgba(0,0,0,0.55);
+    padding: 10px 10px 10px 18px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .dock-inner:focus-within{
+    border-color: var(--ember);
+    box-shadow: 0 0 0 1px rgba(40,95,145,0.35), 0 14px 40px rgba(0,0,0,0.6);
+  }
+  textarea#action{
+    flex: 1;
+    resize: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--page);
+    font-family: 'Noto Naskh Arabic', 'EB Garamond', serif;
+    font-size: 17px;
+    line-height: 1.5;
+    padding: 10px 0;
+    max-height: 140px;
+    min-height: 24px;
+  }
+  textarea#action::placeholder{ color: var(--wolf-dim); font-style: italic; }
+
+  button#send{
+    flex-shrink: 0;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--ember-bright), var(--blood));
+    border: none;
+    border-radius: 7px;
+    padding: 13px 22px;
+    cursor: pointer;
+    transition: transform 0.12s ease, filter 0.12s ease;
+  }
+  button#send:hover{ filter: brightness(1.08); }
+  button#send:active{ transform: scale(0.96); }
+  button#send:disabled{
+    background: var(--wolf-dim);
+    color: #5e7184;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 600px){
+    .wrap{ padding: 78px 14px 150px; }
+    .page{ padding: 22px 20px; margin-left: 12px; font-size: 16.5px; }
+    .player-line{ margin-left: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ember-particle, .flame, .cursor, .status-strip .dot, .turn{ animation: none !important; }
+  }
+
+  /* ---------- Persistent game HUD ---------- */
+  .game-hud{
+    position: fixed;
+    top: 16px;
+    right: 18px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px;
+    background: rgba(5,7,11,0.88);
+    border: 1px solid rgba(77,155,208,0.34);
+    border-radius: 12px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.55), 0 0 24px rgba(40,95,145,0.10);
+    backdrop-filter: blur(10px);
+  }
+  .hud-btn{
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .6px;
+    color: var(--wolf);
+    background: rgba(40,95,145,0.08);
+    border: 1px solid rgba(77,155,208,0.18);
+    border-radius: 8px;
+    padding: 8px 11px;
+    cursor: pointer;
+    transition: .15s ease;
+    white-space: nowrap;
+  }
+  .hud-btn:hover{
+    color: var(--page);
+    border-color: var(--ember-bright);
+    background: rgba(40,95,145,0.20);
+    transform: translateY(-1px);
+  }
+  .hud-turn{
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    font-size: 10px;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+  @media (max-width: 700px){
+    .game-hud{ left: 10px; right: 10px; top: 8px; justify-content: center; }
+    .hud-btn{ padding: 7px 8px; font-size: 10px; }
+    .hud-turn{ display:none; }
+  }
+
+  /* ---------- Medieval manuscript text ---------- */
+  .page p:first-child::first-letter{
+    float: left;
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    font-size: 3.55em;
+    line-height: .78;
+    padding: .06em .12em 0 0;
+    color: var(--ember-bright);
+    text-shadow: 0 0 14px rgba(77,155,208,0.22);
+  }
+  .page p:first-child{
+    text-align: left;
+  }
+
+  /* ---------- Wolf-and-roots sigil ---------- */
+  .sigil{
+    width: 108px;
+    height: 108px;
+    margin: 0 auto 10px;
+    opacity: .98;
+    filter: drop-shadow(0 0 15px rgba(77,155,208,.30));
+  }
+  .sigil-wolf{ fill:#070b12; stroke:#78b7e6; stroke-width:2; }
+  .sigil-wolf-detail{ fill:none; stroke:#4d9bd0; stroke-width:1.5; }
+  .sigil-root{ fill:none; stroke:#526273; stroke-width:2; stroke-linecap:round; }
+  .sigil-eye{ fill:#78b7e6; filter: drop-shadow(0 0 5px rgba(120,183,230,.8)); }
+
+  /* compact persistent header spacing */
+  .wrap{ padding-top: 34px; }
+  .language-toggle{ min-width:60px; font-family:'JetBrains Mono',monospace; font-weight:600; letter-spacing:.6px; }
+  .civic-metrics{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin:12px 0; }
+  .civic-metric{ background:rgba(255,255,255,.035); border:1px solid #243649; padding:9px; border-radius:5px; }
+  .civic-metric strong{ display:block; color:var(--page); font-family:'JetBrains Mono',monospace; font-size:13px; }
+  .civic-metric span{ color:var(--wolf); font-size:11px; }
+  .history-card{ border-left:3px solid var(--ember); }
+  html[dir="ltr"] .history-card{ border-left:1px solid #2a2319; border-right:3px solid var(--ember); }
+  .civic-choice{ width:100%; margin:0 0 8px; text-align:inherit; }
+
+</style>
+</head>
+<body>
+
+<div id="embers"></div>
+
+<div class="game-hud" aria-label="Game controls">
+  <button class="hud-btn" id="hud-hall">⚜ القاعة</button>
+  <button class="hud-btn" id="hud-map">🗺 الخريطة</button>
+  <button class="hud-btn" id="hud-recap">↺ ملخص</button>
+  <button class="hud-btn language-toggle" id="language-toggle" aria-label="Switch language">EN</button>
+  <span class="hud-turn" id="hud-turn">الدور —</span>
+</div>
+
+<div class="toast-stack" id="toast-stack"></div>
+
+<div class="wrap">
+  <header>
+    <svg class="sigil" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" aria-label="Wolf of House Mudsbane">
+      <!-- wolf head -->
+      <path class="sigil-wolf" d="M25 30 L48 40 L70 29 L92 40 L115 30 L109 61
+        C106 88 91 105 70 111 C49 105 34 88 31 61 Z"/>
+      <path class="sigil-wolf-detail" d="M48 40 L42 67 L53 62 M92 40 L98 67 L87 62"/>
+      <path class="sigil-wolf-detail" d="M54 72 Q70 83 86 72 M61 91 Q70 96 79 91"/>
+      <path class="sigil-eye" d="M48 59 L60 56 L55 64 Z"/>
+      <path class="sigil-eye" d="M92 59 L80 56 L85 64 Z"/>
+      <path class="sigil-wolf-detail" d="M70 67 L64 76 L70 80 L76 76 Z"/>
+      <!-- roots -->
+      <path class="sigil-root" d="M70 106 C67 115 70 121 63 132"/>
+      <path class="sigil-root" d="M61 108 C57 116 48 118 43 129"/>
+      <path class="sigil-root" d="M79 108 C83 116 92 118 97 129"/>
+      <path class="sigil-root" d="M52 112 C46 116 38 116 32 121"/>
+      <path class="sigil-root" d="M88 112 C94 116 102 116 108 121"/>
+      <path class="sigil-root" d="M63 118 C57 123 55 128 55 135"/>
+      <path class="sigil-root" d="M77 118 C83 123 85 128 85 135"/>
+    </svg>
+    <h1 id="game-title">سجل طريق الحديد</h1>
+    <div class="subtitle" id="game-subtitle">حملة اللورد مويّد · بيت مودسبين</div>
+  </header>
+
+  <div class="rule"></div>
+
+  <div class="status-strip">
+    <span id="world-status"><span class="dot"></span>العالم يتحرك</span>
+    <span id="turn-indicator">المشهد —</span>
+    <span id="campaign-clock">وقت الحملة —</span>
+    <span id="conn-indicator">الحملة جاهزة</span>
+    <button class="audio-toggle" id="audio-toggle">♪ الصوت مفعّل</button>
+  </div>
+
+  <div class="hall-launch">
+    <button class="hall-btn" id="hall-btn">
+      <span class="hall-btn-icon">⚜</span>
+      <span class="hall-btn-text">
+        <span class="hall-btn-title" id="hall-launch-title">دخول قاعة السجلات</span>
+        <span class="hall-btn-sub" id="hall-launch-sub">الشخصية · الأملاك · المرافقون · المهام · الفصائل · الحقيبة</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="quick-commands" id="quick-commands">
+      <button class="qc-btn" id="map-btn">🗺 الخريطة</button>
+      <button class="qc-btn" id="quick-recap" data-cmd="/recap"><span class="qc-dot"></span>ملخص</button>
+      <button class="qc-btn" id="quick-history" data-cmd="/history">السجل</button>
+    <button class="qc-btn" data-cmd-partial="/memories ">الذاكرة…</button>
+    <button class="qc-btn" data-cmd="/help">مساعدة</button>
+  </div>
+
+
+  <div id="game">
+    <div class="empty" id="empty-state">تنتظر الحملة قرارك الأول. ابدأ باستكشاف الرصيف، أو تفاوض مع التجار، أو اطلب «/recap» لقراءة الملخص.</div>
+  </div>
+</div>
+
+<div class="map-overlay" id="map-overlay">
+  <div class="map-panel">
+    <div class="map-header">
+      <div class="map-title">أطلس قارة ألدينمير</div>
+      <button class="map-close" id="map-close">إغلاق ✕</button>
+    </div>
+    <div class="atlas-subtitle" id="atlas-subtitle">خريطة السجلات والطرق والحدود التي ما زالت تتبدل مع كل قرار.</div>
+    <div class="atlas-toolbar">
+      <div class="atlas-filters" id="atlas-filters">
+        <button class="atlas-filter active" data-filter="all">الكل</button>
+        <button class="atlas-filter" data-filter="city">مدن</button>
+        <button class="atlas-filter" data-filter="castle">قلاع</button>
+        <button class="atlas-filter" data-filter="port">مرافئ</button>
+        <button class="atlas-filter" data-filter="known">المعروف</button>
+        <button class="atlas-filter" data-filter="new">مستجد</button>
+      </div>
+      <span class="atlas-count" id="atlas-count">يُحمّل الأطلس…</span>
+    </div>
+    <div class="atlas-shell">
+      <div class="atlas-stage" id="atlas-stage">
+        <div class="atlas-map-controls" role="group" aria-label="أدوات الخريطة">
+          <button class="atlas-map-control" type="button" id="atlas-zoom-in" aria-label="تكبير الخريطة" title="تكبير">+</button>
+          <span class="atlas-zoom-readout" id="atlas-zoom-readout">100%</span>
+          <button class="atlas-map-control" type="button" id="atlas-zoom-out" aria-label="تصغير الخريطة" title="تصغير">−</button>
+          <button class="atlas-map-control reset" type="button" id="atlas-zoom-reset" aria-label="إعادة ضبط عرض الخريطة" title="إعادة ضبط">ضبط</button>
+        </div>
+        <svg id="map-svg" viewBox="0 0 2560 1440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة قارة ألدينمير" draggable="false">
+          <g class="map-vector-art" id="map-vector-art" aria-hidden="true">
+            <rect class="vector-sea" x="0" y="0" width="2560" height="1440"></rect>
+            <path class="vector-land" d="M145 156 C320 91 548 116 730 179 C907 109 1128 147 1295 218 C1508 112 1773 157 1960 269 C2168 250 2399 336 2460 508 C2502 633 2401 737 2434 871 C2475 1030 2330 1197 2120 1224 C1948 1247 1818 1325 1634 1292 C1445 1260 1301 1350 1112 1304 C907 1254 739 1328 563 1236 C389 1144 188 1101 136 938 C87 780 173 661 130 522 C86 381 35 226 145 156 Z"></path>
+            <path class="vector-land-shadow" d="M160 185 C420 132 650 194 816 237 C1010 182 1202 222 1375 292 C1568 188 1811 220 1989 326 C2162 331 2347 409 2373 527 C2315 471 2201 451 2073 470 C1900 496 1763 413 1584 451 C1393 490 1245 399 1068 455 C866 519 717 407 548 481 C361 562 209 480 132 562 C83 409 78 257 160 185 Z"></path>
+            <path class="vector-region crownlands" d="M175 178 C420 126 666 174 820 239 L754 497 C560 534 346 486 139 563 C92 392 82 253 175 178 Z"></path>
+            <path class="vector-region eastern" d="M820 239 C1002 177 1215 224 1374 292 L1323 567 C1137 602 940 520 754 497 Z"></path>
+            <path class="vector-region coast" d="M1374 292 C1560 194 1818 229 1989 327 L1908 629 C1737 642 1502 561 1323 567 Z"></path>
+            <path class="vector-region far" d="M1989 327 C2180 322 2362 407 2380 538 L2280 753 C2110 728 1988 652 1908 629 Z"></path>
+            <path class="vector-region southern" d="M139 563 C350 489 559 534 754 497 C940 520 1137 602 1323 567 C1502 561 1737 642 1908 629 L1876 1016 C1678 1083 1458 1007 1288 1066 C1057 1145 846 1037 644 1109 C436 1172 231 1067 147 929 C93 788 176 669 139 563 Z"></path>
+            <path class="vector-region frost" d="M2380 538 C2455 655 2407 759 2434 871 C2470 1010 2334 1160 2130 1200 L1908 1016 L1947 735 C2071 722 2220 764 2280 753 Z"></path>
+            <path class="vector-region ashvale" d="M644 1109 C846 1037 1057 1145 1288 1066 L1374 1289 C1204 1328 1021 1254 826 1312 C722 1293 646 1243 563 1236 Z"></path>
+            <path class="vector-region greywood" d="M147 929 C231 1067 436 1172 644 1109 L563 1236 C390 1144 193 1098 136 938 Z"></path>
+            <path class="vector-region wolf" d="M1908 1016 L2130 1200 C1951 1244 1817 1322 1634 1292 L1374 1289 L1288 1066 C1458 1007 1678 1083 1876 1016 Z"></path>
+            <path class="vector-water" d="M278 783 C358 710 472 702 548 758 C626 816 575 896 482 913 C390 931 283 884 278 783 Z"></path>
+            <path class="vector-water" d="M510 1000 C602 930 719 946 770 1026 C803 1079 756 1145 664 1160 C574 1174 491 1090 510 1000 Z"></path>
+            <path class="vector-water" d="M1568 962 C1634 906 1738 914 1780 977 C1815 1032 1760 1080 1688 1084 C1618 1087 1535 1033 1568 962 Z"></path>
+            <path class="vector-river" d="M1100 238 C1058 387 1093 497 1034 616 C982 721 1017 807 968 917 C936 992 961 1075 914 1162"></path>
+            <path class="vector-river" d="M1532 275 C1474 400 1510 524 1450 635 C1395 735 1414 842 1356 941 C1312 1016 1328 1090 1288 1180"></path>
+            <path class="vector-river-minor" d="M704 323 C752 456 721 558 780 675 C831 775 785 854 839 961"></path>
+            <path class="vector-river-minor" d="M1870 385 C1817 493 1866 594 1798 696 C1750 766 1785 856 1719 941"></path>
+            <path class="vector-road" d="M248 644 C542 590 760 618 1017 666 C1235 706 1452 672 1710 727 C1930 775 2140 720 2330 669"></path>
+            <path class="vector-road" d="M410 1037 C672 910 886 885 1108 913 C1320 938 1537 1038 1787 1034 C1987 1030 2151 968 2291 891"></path>
+            <path class="vector-road-minor" d="M579 386 C746 448 901 470 1055 439 C1215 407 1352 382 1510 428 C1690 482 1810 468 1997 418"></path>
+            <path class="vector-mountain" d="M258 341 L344 173 L425 341 Z M386 366 L480 184 L569 366 Z M520 332 L610 158 L705 332 Z M660 388 L753 210 L844 388 Z M834 342 L930 168 L1026 342 Z M1001 394 L1097 204 L1196 394 Z"></path>
+            <path class="vector-mountain-light" d="M344 173 L319 222 L344 211 L368 224 Z M480 184 L451 239 L480 224 L507 240 Z M610 158 L580 215 L610 200 L638 218 Z M753 210 L722 264 L753 249 L783 266 Z M930 168 L899 225 L930 210 L958 227 Z M1097 204 L1065 262 L1097 247 L1126 264 Z"></path>
+            <path class="vector-forest" d="M1410 786 C1463 729 1518 748 1539 809 C1597 771 1648 805 1634 866 C1687 865 1712 918 1670 962 C1599 1008 1462 984 1395 931 C1368 881 1381 825 1410 786 Z"></path>
+            <path class="vector-forest" d="M1836 824 C1890 772 1952 792 1968 846 C2026 823 2070 861 2047 912 C2083 945 2064 1000 2007 1012 C1936 1022 1836 981 1808 929 C1789 886 1802 849 1836 824 Z"></path>
+            <path class="vector-ruin" d="M2235 958 L2315 925 L2368 974 L2320 1038 L2242 1020 Z"></path>
+            <path class="vector-coastline" d="M145 156 C35 226 86 381 130 522 C173 661 87 780 136 938 C188 1101 389 1144 563 1236 C739 1328 907 1254 1112 1304 C1301 1350 1445 1260 1634 1292 C1818 1325 1948 1247 2120 1224 C2330 1197 2475 1030 2434 871 C2401 737 2502 633 2460 508"></path>
+            <g transform="translate(2260 230)"><circle class="vector-compass" r="58"></circle><path d="M0 -42 L14 0 L0 42 L-14 0 Z" fill="#e8d49a"></path><path d="M-42 0 L0 14 L42 0 L0 -14 Z" fill="#253e4d"></path><text x="0" y="-72" text-anchor="middle" class="map-label">N</text></g>
+          </g>
+          <image class="map-raster-layer" href="/static/assets/aldenmere_world_map.jpg" x="0" y="0" width="2560" height="1440" preserveAspectRatio="xMidYMid slice"></image>
+          <g id="map-regions"></g>
+          <g id="map-pins"></g>
+        </svg>
+        <div class="map-tooltip" id="map-tooltip"><span class="mt-title"></span><span class="mt-desc"></span></div>
+        <div class="atlas-nav-hint" id="atlas-nav-hint">اسحب للتحريك · عجلة الفأرة للتكبير</div>
+      </div>
+      <aside class="atlas-sidebar" id="atlas-sidebar">
+        <div class="atlas-detail-kicker">أطلس العالم</div>
+        <div class="atlas-detail-title">اختر موقعًا</div>
+        <div class="atlas-detail-text">مرر فوق أي علامة أو اخترها لقراءة وصفها. المواقع المخفية تظهر كتلميحات فقط إلى أن يكشفها السرد.</div>
+        <div class="atlas-list-title">شخصيات بارزة</div>
+        <div id="atlas-lord-list"></div>
+      </aside>
+    </div>
+    <div class="map-legend">
+      <span><span class="legend-dot" style="background:#285f91"></span><span data-atlas-legend="seat">مقعد البيت</span></span>
+      <span><span class="legend-dot" style="background:#8d9eaf"></span><span data-atlas-legend="settlement">مدينة / بلدة</span></span>
+      <span><span class="legend-dot" style="background:#846747"></span><span data-atlas-legend="castle">قلعة / حصن</span></span>
+      <span><span class="legend-dot" style="background:#7fa0a8"></span><span data-atlas-legend="port">ميناء / تجارة</span></span>
+      <span><span class="legend-dot" style="background:#7a2320"></span><span data-atlas-legend="danger">نزاع أو خطر</span></span>
+      <span><span class="legend-dot" style="background:#526273"></span><span data-atlas-legend="unknown">موقع غير مكتشف</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="hall-overlay" id="hall-overlay">
+  <div class="hall-panel">
+    <div class="hall-header">
+      <div class="hall-header-title">The Hall of House Mudsbane</div>
+      <button class="hall-close" id="hall-close">CLOSE ✕</button>
+    </div>
+    <div class="hall-tabs" id="hall-tabs">
+      <button class="hall-tab active" data-tab="character">Character</button>
+      <button class="hall-tab" data-tab="directory">Characters</button>
+      <button class="hall-tab" data-tab="holdings">Holdings</button>
+      <button class="hall-tab" data-tab="retainers">Retainers</button>
+      <button class="hall-tab" data-tab="quests">Quests</button>
+      <button class="hall-tab" data-tab="factions">Factions</button>
+      <button class="hall-tab" data-tab="inventory">الحقيبة</button>
+      <button class="hall-tab" data-tab="economy">التجارة والدفتر</button>
+      <button class="hall-tab" data-tab="history">تاريخ الحروب</button>
+      <button class="hall-tab" data-tab="civics">شؤون المدن</button>
+      <button class="hall-tab" data-tab="military">الجيش</button>
+    </div>
+    <div class="hall-body" id="hall-body">
+      <div class="hall-panel-loading">Consulting the ledgers…</div>
+    </div>
+  </div>
+</div>
+
+<div class="dock">
+  <div class="dock-inner">
+    <textarea id="action" placeholder="ماذا تفعل؟ اكتب قرارًا واضحًا، أو استخدم /recap للملخص" rows="1"></textarea>
+    <button id="send" onclick="submitAction()">نفّذ</button>
+  </div>
+</div>
+
+<script>
+// ---------------- bilingual interface ----------------
+const STATIC_UI = {
+  ar: {
+    title: 'سجل طريق الحديد', subtitle: 'حملة اللورد مويّد · بيت مودسبين', hall: '⚜ القاعة', map: '🗺 الخريطة', recap: '↺ ملخص',
+    world: 'العالم يتحرك', turn: 'الدور', ready: 'الحملة جاهزة', hallLaunch: 'دخول قاعة السجلات',
+    hallSub: 'الشخصية · الأملاك · المرافقون · المهام · الفصائل · الحقيبة · التاريخ · المدن', mapTitle: 'أطلس قارة ألدينمير', close: 'إغلاق ✕',
+    mapSubtitle: 'خريطة السجلات والطرق والحدود التي ما زالت تتبدل مع كل قرار.', all: 'الكل', cities: 'مدن', castles: 'قلاع', ports: 'مرافئ', known: 'المعروف', new: 'مستجد',
+    hallTitle: 'قاعة بيت مودسبين', character: 'الشخصية', characters: 'الشخصيات', holdings: 'الأملاك', retainers: 'المرافقون', quests: 'المهام', factions: 'الفصائل', inventory: 'الحقيبة', military: 'الجيش',
+    memories: 'الذاكرة…', help: 'مساعدة', placeholder: 'ماذا تفعل؟ اكتب قرارًا واضحًا، أو استخدم /recap للملخص', send: 'نفّذ', historyCommand: 'السجل', musicOn: '♪ الموسيقى مفعّلة', musicOff: '♪ الموسيقى متوقفة', narrating: 'الراوي يكتب المشهد…', elapsed: 'الوقت المنقضي',
+    localMarketError: 'تعذر تحميل بيانات السوق المحلي.', warLoading: 'يُحمّل سجل الحروب…', civicsLoading: 'يُحمّل سجل المدن…', market: 'السوق المحلي', chooseLocation: 'اختر مدينة أو حصنًا لعرض الملف المدني وسوقه.',
+    historicalArchive: 'أرشيف الحروب الكبرى', affectedRegions: 'المناطق المتأثرة', localSupply: 'المعروض المميز', localDemand: 'الطلب المحلي', price: 'سعر الشراء', stock: 'المخزون',
+    security: 'الأمن', prosperity: 'الازدهار', loyalty: 'الولاء', tax: 'الضريبة', population: 'السكان', government: 'الإدارة', governor: 'الحاكم',
+    atlasUnavailable: 'تعذر تحميل الأطلس حاليًا.', atlasErrorTitle: 'تعذر فتح سجل العالم', atlasErrorBody: 'جرّب مرة أخرى بعد لحظة.', at: 'من', locations: 'موضعًا في الأطلس', unknownLocation: 'موقع غير مكتشف',
+    unknownDesc: 'تلمح الخريطة إلى وجودٍ غير معروف هنا. قد يكشفه السفر أو السرد القادم.', noDesc: 'لا وصف متاح بعد.', continueStory: 'تابع السرد من هذا الموضع', emptyState: 'تنتظر الحملة قرارك الأول. ابدأ باستكشاف الرصيف، أو تفاوض مع التجار، أو اطلب «/recap» لقراءة الملخص.',
+    zoomIn: 'تكبير', zoomOut: 'تصغير', resetView: 'ضبط', mapControls: 'أدوات الخريطة', mapHint: 'اسحب من أي مكان للتحريك · عجلة الفأرة للتكبير', mapStyleRaster: 'مصوّرة', mapStyleVector: 'متجهية', mapStyleToggle: 'تبديل نمط الخريطة',
+    equipment: 'التجهيز', items: 'العناصر', emptySlot: 'فارغ', equip: 'تجهيز', equipped: '✓ مجهّز', noItems: 'لا تحمل عناصر بعد.',
+    slot_head: 'الرأس', slot_chest: 'الصدر', slot_hands: 'اليدان', slot_feet: 'القدمان', slot_weapon: 'السلاح', slot_offhand: 'اليد الأخرى', slot_accessory: 'إكسسوار',
+    damage: 'ضرر', armor: 'درع', value: 'القيمة', weight: 'الوزن', gold: 'ذهب', wallet: 'المحفظة', authenticatedWallet: 'المحفظة الموثّقة', crowns: 'تيجان', silverCoins: 'قطع فضية', copperCoins: 'قطع نحاسية', characterDirectory: 'دليل الشخصيات', characterDirectoryIntro: 'الشخصيات المعروفة وحضورها القانوني في عالم الحملة.', allCharacters: 'كل الشخصيات', lords: 'اللوردات', companions: 'المرافقون', status: 'الحالة', currentLocation: 'الموقع الحالي', destination: 'الوجهة', lastSeen: 'آخر ظهور', biography: 'السيرة', role: 'الدور', morale: 'المعنويات', trust: 'الثقة', respect: 'الاحترام', active: 'نشطة', traveling: 'مسافرة', captured: 'أسيرة', dead: 'متوفاة', unknownStatus: 'غير معروفة', charactersLoading: 'يُحمّل سجل الشخصيات…', charactersUnavailable: 'تعذر تحميل سجل الشخصيات.', noCharacters: 'لا توجد شخصيات معروفة بعد.'
+  },
+  en: {
+    title: 'Iron Path Reforged', subtitle: 'Lord Moayed’s campaign · House Mudsbane', hall: '⚜ Hall', map: '🗺 Map', recap: '↺ Recap',
+    world: 'The world moves', turn: 'Turn', ready: 'Campaign ready', hallLaunch: 'Enter the Hall of Records',
+    hallSub: 'Character · Holdings · Retainers · Quests · Factions · Inventory · History · Civic Affairs', mapTitle: 'Atlas of Aldenmere', close: 'Close ✕',
+        mapSubtitle: 'A record of roads, borders and settlements that change with every decision.', all: 'All', cities: 'Cities', castles: 'Fortresses', ports: 'Ports', known: 'Known', new: 'New',
+     hallTitle: 'The Hall of House Mudsbane', character: 'Character', characters: 'Characters', holdings: 'Holdings', retainers: 'Retainers', quests: 'Quests', factions: 'Factions', inventory: 'Inventory', military: 'Military',
+    memories: 'Memory…', help: 'Help', placeholder: 'What do you do? State a clear decision, or use /recap.', send: 'Act', historyCommand: 'Chronicle', musicOn: '♪ Music on', musicOff: '♪ Music off', narrating: 'The narrator is writing the scene…', elapsed: 'Elapsed',
+    localMarketError: 'The local market could not be loaded.', warLoading: 'Loading the war chronicle…', civicsLoading: 'Loading civic records…', market: 'Local market', chooseLocation: 'Choose a city or fortress to view its civic record and market.',
+    historicalArchive: 'Archive of Major Wars', affectedRegions: 'Affected regions', localSupply: 'Signature supply', localDemand: 'Local demand', price: 'Buy price', stock: 'Stock',
+    security: 'Security', prosperity: 'Prosperity', loyalty: 'Loyalty', tax: 'Tax', population: 'Population', government: 'Government', governor: 'Governor',
+    atlasUnavailable: 'The atlas is unavailable right now.', atlasErrorTitle: 'The world record could not be opened', atlasErrorBody: 'Please try again in a moment.', at: 'of', locations: 'locations in the atlas', unknownLocation: 'Undiscovered location',
+    unknownDesc: 'The map hints at an unknown presence here. Travel or the next chapter may reveal it.', noDesc: 'No description is available yet.', continueStory: 'Continue the story from here', emptyState: 'The campaign awaits your first decision. Explore the quay, bargain with merchants, or use /recap to review the chronicle.',
+    zoomIn: 'Zoom in', zoomOut: 'Zoom out', resetView: 'Reset', mapControls: 'Map controls', mapHint: 'Drag anywhere to pan · Use the mouse wheel to zoom', mapStyleRaster: 'Illustrated', mapStyleVector: 'Vector', mapStyleToggle: 'Switch map style',
+    equipment: 'Equipment', items: 'Items', emptySlot: 'Empty', equip: 'Equip', equipped: '✓ Equipped', noItems: 'You are not carrying any items yet.',
+    slot_head: 'Head', slot_chest: 'Chest', slot_hands: 'Hands', slot_feet: 'Feet', slot_weapon: 'Weapon', slot_offhand: 'Off-hand', slot_accessory: 'Accessory',
+    damage: 'Damage', armor: 'Armor', value: 'Value', weight: 'Weight', gold: 'gold', wallet: 'Wallet', authenticatedWallet: 'Verified wallet', crowns: 'Crowns', silverCoins: 'Silver', copperCoins: 'Copper', characterDirectory: 'Character Directory', characterDirectoryIntro: 'Known people and their legally tracked presence in the campaign world.', allCharacters: 'All characters', lords: 'Lords', companions: 'Companions', status: 'Status', currentLocation: 'Current location', destination: 'Destination', lastSeen: 'Last seen', biography: 'Biography', role: 'Role', morale: 'Morale', trust: 'Trust', respect: 'Respect', active: 'Active', traveling: 'Traveling', captured: 'Captured', dead: 'Dead', unknownStatus: 'Unknown', charactersLoading: 'Loading the character register…', charactersUnavailable: 'The character register could not be loaded.', noCharacters: 'No known characters yet.'
+  }
+};
+let currentLanguage = localStorage.getItem('ironpath_language') === 'en' ? 'en' : 'ar';
+let localizedUI = {};
+function t(key){
+  const fromAPI = localizedUI && localizedUI[key];
+  if (fromAPI !== undefined && fromAPI !== null && String(fromAPI).trim() !== '') return fromAPI;
+  const local = STATIC_UI[currentLanguage] || STATIC_UI.ar;
+  return local[key] ?? STATIC_UI.en?.[key] ?? key;
+}
+function applyStaticLanguage(){
+  const s = STATIC_UI[currentLanguage];
+  document.documentElement.lang = currentLanguage;
+  document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+  document.title = s.title;
+  document.getElementById('game-title').textContent = s.title;
+  document.getElementById('game-subtitle').textContent = s.subtitle;
+  document.getElementById('hud-hall').textContent = s.hall;
+  document.getElementById('hud-map').textContent = s.map;
+  document.getElementById('hud-recap').textContent = s.recap;
+  document.getElementById('language-toggle').textContent = currentLanguage === 'ar' ? 'EN' : 'العربية';
+  document.getElementById('world-status').innerHTML = `<span class="dot"></span>${s.world}`;
+  document.getElementById('conn-indicator').textContent = s.ready;
+  document.getElementById('hall-launch-title').textContent = s.hallLaunch;
+  document.getElementById('hall-launch-sub').textContent = s.hallSub;
+  document.getElementById('empty-state').textContent = s.emptyState;
+  document.getElementById('map-btn').textContent = s.map;
+  document.getElementById('quick-recap').innerHTML = `<span class="qc-dot"></span>${s.recap.replace('↺ ', '')}`;
+  document.getElementById('quick-history').textContent = s.historyCommand;
+  document.querySelector('[data-cmd-partial="/memories "]').textContent = s.memories;
+  document.querySelector('[data-cmd="/help"]').textContent = s.help;
+  document.getElementById('action').placeholder = s.placeholder;
+  document.getElementById('send').textContent = s.send;
+  document.querySelector('.map-title').textContent = s.mapTitle;
+  document.getElementById('map-close').textContent = s.close;
+  document.getElementById('atlas-zoom-in').setAttribute('aria-label', s.zoomIn);
+  document.getElementById('atlas-zoom-in').title = s.zoomIn;
+  document.getElementById('atlas-zoom-out').setAttribute('aria-label', s.zoomOut);
+  document.getElementById('atlas-zoom-out').title = s.zoomOut;
+  document.getElementById('atlas-zoom-reset').textContent = s.resetView;
+  document.getElementById('atlas-zoom-reset').setAttribute('aria-label', s.resetView);
+  document.getElementById('atlas-zoom-reset').title = s.resetView;
+  document.querySelector('.atlas-map-controls').setAttribute('aria-label', s.mapControls);
+  document.getElementById('atlas-nav-hint').textContent = s.mapHint;
+  if (typeof updateAtlasStyleToggle === 'function') updateAtlasStyleToggle();
+  const legendLabels = currentLanguage === 'en'
+    ? {seat:'House seat', settlement:'City / settlement', castle:'Castle / fortress', port:'Port / trade', danger:'Conflict or danger', unknown:'Undiscovered location'}
+    : {seat:'مقعد البيت', settlement:'مدينة / بلدة', castle:'قلعة / حصن', port:'ميناء / تجارة', danger:'نزاع أو خطر', unknown:'موقع غير مكتشف'};
+  document.querySelectorAll('[data-atlas-legend]').forEach(label => {
+    label.textContent = legendLabels[label.dataset.atlasLegend] || label.textContent;
+  });
+  document.querySelector('.hall-header-title').textContent = s.hallTitle;
+  document.getElementById('hall-close').textContent = s.close;
+  const filterLabels = {all:s.all, city:s.cities, castle:s.castles, port:s.ports, known:s.known, new:s.new};
+  document.querySelectorAll('.atlas-filter').forEach(btn => { btn.textContent = filterLabels[btn.dataset.filter] || btn.textContent; });
+  const tabLabels = {character:s.character, directory:s.characters, holdings:s.holdings, retainers:s.retainers, quests:s.quests, factions:s.factions, inventory:s.inventory, economy:t('trade'), history:t('history'), civics:t('civics'), military:s.military};
+  document.querySelectorAll('.hall-tab').forEach(tab => { tab.textContent = tabLabels[tab.dataset.tab] || tab.textContent; });
+  updateAudioToggleUI();
+  updateTurnIndicator(turnCount);
+}
+async function setLanguage(language){
+  currentLanguage = language === 'en' ? 'en' : 'ar';
+  localStorage.setItem('ironpath_language', currentLanguage);
+  try {
+    const response = await fetch(`/localization-data?lang=${currentLanguage}`);
+    const data = await response.json();
+    localizedUI = response.ok ? (data.strings || {}) : {};
+  } catch (err) { localizedUI = {}; }
+  applyStaticLanguage();
+  updateCampaignClock(lastCampaignClock);
+  if (typeof hallOverlay !== 'undefined' && hallOverlay.classList.contains('open')) renderActiveHallTab();
+  if (typeof mapOverlay !== 'undefined' && mapOverlay.classList.contains('open')) loadMapData();
+}
+document.getElementById('language-toggle').addEventListener('click', () => setLanguage(currentLanguage === 'ar' ? 'en' : 'ar'));
+
+// ---------------- ambient embers ----------------
+(function spawnEmbers(){
+  const field = document.getElementById('embers');
+  const COUNT = 18;
+  for(let i=0;i<COUNT;i++){
+    const e = document.createElement('div');
+    e.className = 'ember-particle';
+    const left = Math.random()*100;
+    const dur = 9 + Math.random()*10;
+    const delay = Math.random()*12;
+    const drift = (Math.random()*60 - 30) + 'px';
+    e.style.left = left + 'vw';
+    e.style.animationDuration = dur + 's';
+    e.style.animationDelay = delay + 's';
+    e.style.setProperty('--drift', drift);
+    field.appendChild(e);
+  }
+})();
+
+// ---------------- textarea autosize ----------------
+const actionEl = document.getElementById('action');
+actionEl.addEventListener('input', () => {
+  actionEl.style.height = 'auto';
+  actionEl.style.height = Math.min(actionEl.scrollHeight, 140) + 'px';
+});
+actionEl.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    submitAction();
+  }
+});
+
+// ---------------- original medieval soundtrack ----------------
+let audioMuted = localStorage.getItem('ironpath_muted') === 'true';
+const gameMusic = new Audio('/static/medieval_song.wav');
+gameMusic.loop = true;
+gameMusic.volume = 0.18;
+gameMusic.preload = 'auto';
+
+const audioToggleBtn = document.getElementById('audio-toggle');
+
+function updateAudioToggleUI(){
+  audioToggleBtn.textContent = audioMuted ? t('musicOff') : t('musicOn');
+  audioToggleBtn.classList.toggle('muted', audioMuted);
+}
+updateAudioToggleUI();
+
+function startGameMusic(){
+  if (audioMuted) return;
+  gameMusic.play().catch(() => {});
+}
+
+function stopGameMusic(){
+  gameMusic.pause();
+}
+
+audioToggleBtn.addEventListener('click', () => {
+  audioMuted = !audioMuted;
+  localStorage.setItem('ironpath_muted', String(audioMuted));
+  updateAudioToggleUI();
+  if (audioMuted) stopGameMusic();
+  else startGameMusic();
+});
+
+// Browser autoplay rules require a user gesture.
+document.addEventListener('click', startGameMusic, {once:true});
+document.addEventListener('keydown', startGameMusic, {once:true});
+
+function playLevelUpChime(){
+  // Let the soundtrack carry the atmosphere; no intrusive notification sound.
+}
+
+function playEventChime(){
+  // Decisive turns are intentionally silent so the music remains unobtrusive.
+}
+
+function playQuillTick(){
+  // No typing clicks over the soundtrack.
+}
+
+// ---------------- Hall dashboard (visual panels, backed by /dashboard-data) ----------------
+const hallOverlay = document.getElementById('hall-overlay');
+const hallBody = document.getElementById('hall-body');
+const hallTabs = document.getElementById('hall-tabs');
+let hallData = null;
+let activeHallTab = 'character';
+
+function barColor(value){
+  if (value >= 66) return '#5c7a4f';
+  if (value >= 33) return '#78b7e6';
+  return '#7a2320';
+}
+
+function statBar(label, value, max){
+  max = max || 100;
+  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  return `
+    <div class="stat-row">
+      <span class="stat-row-label">${escapeHtml(label)}</span>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%; background:${barColor(pct)}"></div></div>
+      <span class="stat-row-value">${value}</span>
+    </div>`;
+}
+
+function renderCharacterTab(data){
+  const player = data.player_state || {};
+  const stats = data.character_stats || [];
+  const specs = data.specializations || [];
+  const traits = data.traits || [];
+
+  const metrics = `
+    <div class="char-summary">
+      <div class="char-metric"><div class="char-metric-value">${player.level ?? 1}</div><div class="char-metric-label">Level</div></div>
+      <div class="char-metric"><div class="char-metric-value">${player.reputation ?? 50}</div><div class="char-metric-label">Reputation</div></div>
+      <div class="char-metric"><div class="char-metric-value">${player.political_influence ?? 0}</div><div class="char-metric-label">Political</div></div>
+      <div class="char-metric"><div class="char-metric-value">${player.military_influence ?? 0}</div><div class="char-metric-label">Military</div></div>
+    </div>`;
+
+  const masteries = stats.length ? stats.map(s =>
+    statBar(s.display_name, s.xp, s.xp_needed) +
+    `<div style="margin:-4px 0 12px 110px; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--wolf);">Level ${s.level}</div>`
+  ).join('') : `<div class="hall-empty">No masteries tracked yet.</div>`;
+
+  const byMastery = {};
+  specs.forEach(s => { (byMastery[s.mastery_name] = byMastery[s.mastery_name] || []).push(s); });
+  const specsHtml = Object.keys(byMastery).length ? Object.entries(byMastery).map(([mastery, group]) => `
+    <div style="margin-bottom:10px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--wolf); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">${escapeHtml(mastery.replace(/_/g,' '))}</div>
+      ${group.map(s => `<span class="spec-pill ${s.unlocked ? 'spec-unlocked' : 'spec-locked'}">${s.unlocked ? '✓ ' : '🔒 '}${escapeHtml(s.specialization)}</span>`).join('')}
+    </div>`).join('') : `<div class="hall-empty">No specialization trees yet.</div>`;
+
+  const traitsHtml = traits.length ? traits.map(t => `
+    <span class="trait-badge">
+      <span class="trait-badge-name">${escapeHtml(t.display_name)}</span>
+      <span class="trait-badge-desc">${escapeHtml(t.description || '')}</span>
+    </span>`).join('') : `<div class="hall-empty">No traits unlocked yet. Traits emerge from consistent behavior.</div>`;
+
+  hallBody.innerHTML = `
+    ${metrics}
+    <div class="hall-section-title">Masteries</div>
+    ${masteries}
+    <div class="hall-section-title">Specializations</div>
+    ${specsHtml}
+    <div class="hall-section-title">Traits</div>
+    <div>${traitsHtml}</div>
+  `;
+}
+
+function renderHoldingsTab(data){
+  const holdings = data.holdings || [];
+  if (!holdings.length){
+    hallBody.innerHTML = `<div class="hall-empty">No holdings tracked yet.</div>`;
+    return;
+  }
+  hallBody.innerHTML = `<div class="hall-grid">${holdings.map(h => `
+    <div class="hall-card">
+      <div class="hall-card-header">
+        <span class="hall-card-title">${escapeHtml(h.name)}</span>
+        ${h.governor ? `<span class="hall-card-tag">${escapeHtml(h.governor)}</span>` : ''}
+      </div>
+      ${statBar('Prosperity', h.prosperity)}
+      ${statBar('Security', h.security)}
+      ${statBar('Loyalty', h.loyalty)}
+      ${statBar('Military', h.military_strength)}
+      ${statBar('Food supply', h.food_supply)}
+      ${h.active_problems ? `<div class="hall-card-meta">⚠ ${escapeHtml(h.active_problems)}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+function renderRetainersTab(data){
+  const retainers = data.retainers || [];
+  if (!retainers.length){
+    hallBody.innerHTML = `<div class="hall-empty">No retainers tracked yet.</div>`;
+    return;
+  }
+  hallBody.innerHTML = `<div class="hall-grid">${retainers.map(r => `
+    <div class="hall-card">
+      <div class="hall-card-header">
+        <span class="hall-card-title">${escapeHtml(r.name)}</span>
+        <span class="hall-card-tag">${escapeHtml(r.status || 'active')}</span>
+      </div>
+      ${statBar('Loyalty', r.loyalty)}
+      ${statBar('Morale', r.morale)}
+      ${statBar('Trust', r.trust)}
+      ${statBar('Respect', r.respect)}
+      ${(r.assignment || r.location) ? `<div class="hall-card-meta">${r.assignment ? 'Assignment: ' + escapeHtml(r.assignment) : ''}${r.assignment && r.location ? ' — ' : ''}${r.location ? 'Location: ' + escapeHtml(r.location) : ''}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+function renderQuestsTab(data){
+  const quests = data.quests || [];
+  if (!quests.length){
+    hallBody.innerHTML = `<div class="hall-empty">No quests tracked yet.</div>`;
+    return;
+  }
+  const statuses = ['active', 'completed', 'failed', 'abandoned', 'hidden'];
+  let html = '';
+  statuses.forEach(status => {
+    const matching = quests.filter(q => q.status === status);
+    if (!matching.length) return;
+    html += `<div class="hall-section-title">${status}</div><div class="hall-grid">`;
+    html += matching.map(q => `
+      <div class="hall-card">
+        <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(q.title)}</span></div>
+        ${q.description ? `<p class="hall-card-desc">${escapeHtml(q.description)}</p>` : ''}
+        ${q.location ? `<div class="hall-card-meta">📍 ${escapeHtml(q.location)}</div>` : ''}
+      </div>`).join('');
+    html += `</div>`;
+  });
+  hallBody.innerHTML = html || `<div class="hall-empty">No quests tracked yet.</div>`;
+}
+
+function renderFactionsTab(data){
+  const factions = data.factions || [];
+  if (!factions.length){
+    hallBody.innerHTML = `<div class="hall-empty">No factions tracked yet.</div>`;
+    return;
+  }
+  hallBody.innerHTML = `<div class="hall-grid">${factions.map(f => `
+    <div class="hall-card">
+      <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(f.name)}</span></div>
+      ${statBar('Trust', f.trust)}
+      ${statBar('Fear', f.fear)}
+      ${statBar('Loyalty', f.loyalty)}
+      ${statBar('Leverage', f.leverage)}
+    </div>`).join('')}</div>`;
+}
+
+const ITEM_ICONS = { weapon: '⚔', armor: '🛡', accessory: '💍', currency: '🪙', potion: '🧪', misc: '🎒' };
+const EQUIP_SLOTS = [
+  { key: 'head' }, { key: 'chest' }, { key: 'hands' }, { key: 'feet' },
+  { key: 'weapon' }, { key: 'offhand' }, { key: 'accessory' },
+];
+
+function itemStatChips(item){
+  const chips = [];
+  if (item.damage != null) chips.push(`<span class="item-stat stat-damage">⚔ ${t('damage')} ${item.damage}</span>`);
+  if (item.armor_rating != null) chips.push(`<span class="item-stat stat-armor">🛡 ${t('armor')} ${item.armor_rating}</span>`);
+  if (item.value) chips.push(`<span class="item-stat stat-value">${t('value')} · ${item.value.toLocaleString ? item.value.toLocaleString() : item.value} ${t('gold')}</span>`);
+  if (item.weight) chips.push(`<span class="item-stat">${t('weight')} · ${item.weight}</span>`);
+  if (item.effect) chips.push(`<span class="item-stat stat-effect">✦ ${escapeHtml(item.effect)}</span>`);
+  return chips.length ? `<div class="item-stats">${chips.join('')}</div>` : '';
+}
+
+async function toggleEquip(itemId, currentlyEquipped){
+  try {
+    await fetch('/equip-item', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_id: itemId, equipped: !currentlyEquipped })
+    });
+  } catch (err) { /* fail quietly, re-fetch below will reflect actual state */ }
+  await loadHallData();
+}
+
+function formatCopper(value){
+  const amount = Math.abs(Number(value) || 0);
+  if (currentLanguage === 'en') return `${Math.floor(amount / 100)} crowns · ${Math.floor((amount % 100) / 10)} silver · ${amount % 10} copper`;
+  return `${Math.floor(amount / 100)} تاج · ${Math.floor((amount % 100) / 10)} فضة · ${amount % 10} نحاس`;
+}
+function walletPanel(economy){
+  const wallet = economy?.wallet || {balance_copper:0, denominations:{crown:0,silver:0,copper:0}};
+  const d = wallet.denominations || {};
+  return `<div class="coin-display"><div class="coin-icon">₡</div><div><div class="coin-amount">${formatCopper(wallet.balance_copper)}</div><div class="coin-label">${t('authenticatedWallet')} · ${Number(wallet.balance_copper || 0).toLocaleString()} ${currentLanguage === 'en' ? 'copper' : 'نحاسًا'}</div></div></div>
+    <div class="wallet-grid"><div class="wallet-unit"><strong>${d.crown || 0}</strong><span>${t('crowns')}</span></div><div class="wallet-unit"><strong>${d.silver || 0}</strong><span>${t('silverCoins')}</span></div><div class="wallet-unit"><strong>${d.copper || 0}</strong><span>${t('copperCoins')}</span></div></div>`;
+}
+function showToast(message){
+  const stack = document.getElementById('toast-stack');
+  if (!stack) return;
+  const toast = document.createElement('div');
+  toast.className = 'level-toast';
+  toast.innerHTML = `✦ ${escapeHtml(message)}`;
+  stack.appendChild(toast);
+  setTimeout(() => toast.remove(), 3600);
+}
+
+function renderInventoryTab(data){
+  const inventory = (data.inventory || []).filter(i => i.category !== 'currency');
+  const equippableCategories = new Set(['weapon', 'armor', 'accessory']);
+  const equippedBySlot = {};
+  inventory.forEach(i => { if (i.equipped && i.slot) equippedBySlot[i.slot] = i; });
+  const slotsHtml = `<div class="equip-slots">${EQUIP_SLOTS.map(s => { const item = equippedBySlot[s.key]; return `<div class="equip-slot ${item ? 'filled' : ''}"><div class="equip-slot-label">${escapeHtml(t(`slot_${s.key}`))}</div>${item ? `<div class="equip-slot-item">${escapeHtml(item.name)}</div>` : `<div class="equip-slot-empty">${escapeHtml(t('emptySlot'))}</div>`}</div>`; }).join('')}</div>`;
+  const itemsHtml = inventory.length ? `<div class="item-grid">${inventory.map(i => `<div class="item-card" style="flex-direction:column;align-items:stretch;"><div style="display:flex;gap:12px;align-items:flex-start;"><div class="item-icon">${ITEM_ICONS[i.category] || ITEM_ICONS.misc}</div><div style="flex:1;"><div class="item-name">${escapeHtml(i.name)} ${i.quantity > 1 ? `<span class="item-qty">×${i.quantity}</span>` : ''}</div>${i.description ? `<div class="item-desc">${escapeHtml(i.description)}</div>` : ''}</div></div>${itemStatChips(i)}${(i.slot && equippableCategories.has(i.category)) ? `<button type="button" class="item-equip-btn ${i.equipped ? 'equipped' : ''}" data-item-id="${i.item_id}" data-equipped="${i.equipped}">${escapeHtml(i.equipped ? t('equipped') : t('equip'))}</button>` : ''}</div>`).join('')}</div>` : `<div class="hall-empty">${escapeHtml(t('noItems'))}</div>`;
+  hallBody.innerHTML = `${walletPanel(data.economy)}<div class="hall-section-title">${escapeHtml(t('equipment'))}</div>${slotsHtml}<div class="hall-section-title">${escapeHtml(t('items'))}</div>${itemsHtml}`;
+  hallBody.querySelectorAll('.item-equip-btn').forEach(btn => btn.addEventListener('click', () => toggleEquip(parseInt(btn.getAttribute('data-item-id'), 10), btn.getAttribute('data-equipped') === 'true')));
+}
+async function submitTrade(goodId, side, input){
+  const quantity = Number(input.value || 1);
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) { showToast('أدخل كمية صحيحة بين 1 و99.'); return; }
+  try {
+    const res = await fetch('/trade', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({good_id:goodId, side, quantity})});
+    const body = await res.json();
+    if (!res.ok || body.error) throw new Error(body.error || 'تعذرت الصفقة.');
+    showToast(`${side === 'buy' ? 'تم الشراء' : 'تم البيع'}: ${body.trade.name || body.trade.good_id} · ${formatCopper(Math.abs(body.trade.amount_copper))}`);
+    await loadHallData();
+  } catch (err) { showToast(err.message || 'تعذرت الصفقة.'); }
+}
+function renderEconomyTab(data){
+  const economy = data.economy || {};
+  const goods = economy.market || [];
+  const ledger = economy.ledger || [];
+  const goodsHtml = goods.length ? goods.map(g => `<div class="market-row"><div><div class="market-name">${escapeHtml(g.name)}</div><div class="market-meta">${escapeHtml(g.description || '')}</div></div><div class="market-meta">شراء ${formatCopper(g.buy_price_copper)}</div><div class="market-meta">لديك ${g.player_quantity} · المتجر ${g.merchant_quantity}</div><div class="trade-controls"><input aria-label="كمية ${escapeHtml(g.name)}" value="1" min="1" max="99" type="number"><button class="trade-btn" data-good="${escapeHtml(g.good_id)}" data-side="buy">شراء</button><button class="trade-btn sell" data-good="${escapeHtml(g.good_id)}" data-side="sell">بيع</button></div></div>`).join('') : '<div class="hall-empty">لا توجد سلع معروضة الآن.</div>';
+  const ledgerHtml = ledger.length ? ledger.map(e => `<div class="ledger-row"><span>${escapeHtml(e.entry_type)}</span><span>${escapeHtml(e.memo || e.counterparty || 'قيد مالي')}</span><strong class="${e.delta_copper >= 0 ? 'credit' : 'debit'}">${e.delta_copper >= 0 ? '+' : '-'}${formatCopper(e.delta_copper)}</strong></div>`).join('') : '<div class="hall-empty">لا توجد قيود بعد.</div>';
+  hallBody.innerHTML = `${walletPanel(economy)}<div class="hall-section-title">سوق الحملة</div><div class="hall-card">${goodsHtml}</div><div class="hall-section-title">دفتر القيود الأخير</div><div class="hall-card">${ledgerHtml}</div>`;
+  hallBody.querySelectorAll('.trade-btn').forEach(button => button.addEventListener('click', () => submitTrade(button.dataset.good, button.dataset.side, button.parentElement.querySelector('input'))));
+}
+
+let civicProfiles = [];
+let selectedCivicLocation = null;
+
+function shopPanelHtml(location, shop, optionsPayload){
+  if (shop) {
+    return `<div class="hall-section-title">${escapeHtml(t('player_shops'))}</div>
+      <div class="hall-card player-shop-card">
+        <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(t('owned_shop'))}: ${escapeHtml(shop.shop_type_label)}</span><span class="hall-card-tag">Lv ${escapeHtml(shop.level)}</span></div>
+        <p class="hall-card-desc">${escapeHtml(shop.shop_description)}</p>
+        <div class="civic-metrics">
+          <div class="civic-metric"><strong>${formatCopper(shop.daily_profit)}</strong><span>${escapeHtml(t('daily_profit'))}</span></div>
+          <div class="civic-metric"><strong>${escapeHtml(shop.last_settled_turn)}</strong><span>${escapeHtml(t('last_settlement'))}</span></div>
+        </div>
+      </div>`;
+  }
+  const options = optionsPayload?.options || [];
+  if (!options.length) return `<div class="hall-section-title">${escapeHtml(t('player_shops'))}</div><div class="hall-card"><div class="hall-empty">${escapeHtml(t('no_shop'))}</div></div>`;
+  return `<div class="hall-section-title">${escapeHtml(t('player_shops'))}</div>
+    <div class="hall-card" id="shop-licence-panel">
+      <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(t('open_shop'))}</span><span class="hall-card-tag">${escapeHtml(t('shop_status'))}</span></div>
+      <select id="shop-type" aria-label="${escapeHtml(t('open_shop'))}">${options.map(option => `<option value="${escapeHtml(option.shop_type)}" data-cost="${escapeHtml(option.opening_cost_copper)}">${escapeHtml(option.label)} — ${formatCopper(option.opening_cost_copper)}</option>`).join('')}</select>
+      <div id="shop-option-description" class="hall-card-desc">${escapeHtml(options[0].description)}</div>
+      <div class="hall-card-meta" id="shop-option-profit">${escapeHtml(t('daily_profit'))}: ${formatCopper(options[0].estimated_turn_profit_copper)} · ${escapeHtml(t('tax'))}: ${formatCopper(options[0].rent_copper + options[0].commission_copper)}</div>
+      <button class="atlas-action" type="button" id="open-player-shop" data-location="${escapeHtml(location)}">${escapeHtml(t('open_shop'))}</button><div id="shop-feedback" class="hall-card-meta"></div>
+    </div>`;
+}
+
+function bindShopControls(options){
+  const select = document.getElementById('shop-type');
+  const description = document.getElementById('shop-option-description');
+  const profit = document.getElementById('shop-option-profit');
+  if (select) select.addEventListener('change', () => {
+    const selected = options.find(option => option.shop_type === select.value);
+    if (!selected) return;
+    if (description) description.textContent = selected.description;
+    if (profit) profit.textContent = `${t('daily_profit')}: ${formatCopper(selected.estimated_turn_profit_copper)} · ${t('tax')}: ${formatCopper(selected.rent_copper + selected.commission_copper)}`;
+  });
+  document.getElementById('open-player-shop')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    const feedback = document.getElementById('shop-feedback');
+    button.disabled = true;
+    if (feedback) feedback.textContent = '…';
+    try {
+      const response = await fetch('/open-shop', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({location: button.dataset.location, shop_type: select?.value})});
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'shop opening failed');
+      await renderCivicsTab();
+    } catch (error) {
+      if (feedback) feedback.textContent = error.message || t('localMarketError');
+      button.disabled = false;
+    }
+  });
+}
+
+async function renderHistoryTab(){
+  hallBody.innerHTML = `<div class="hall-panel-loading">${escapeHtml(t('warLoading'))}</div>`;
+  try {
+    const res = await fetch(`/history-data?lang=${currentLanguage}`);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'history unavailable');
+    const wars = data.wars || [];
+    hallBody.innerHTML = wars.length ? `
+      <div class="hall-section-title">${escapeHtml(t('historicalArchive'))}</div>
+      <div class="hall-grid">${wars.map(w => `<article class="hall-card history-card">
+        <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(w.name)}</span><span class="hall-card-tag">${escapeHtml(w.year)}</span></div>
+        <p class="hall-card-desc">${escapeHtml(w.summary)}</p>
+        <div class="hall-card-meta"><strong>${escapeHtml(t('war_legacy'))}:</strong> ${escapeHtml(w.legacy)}</div>
+        <div class="hall-card-meta"><strong>${escapeHtml(t('affectedRegions'))}:</strong> ${escapeHtml(w.regions)}</div>
+      </article>`).join('')}</div>` : `<div class="hall-empty">${escapeHtml(t('historicalArchive'))}: —</div>`;
+  } catch (err) {
+    hallBody.innerHTML = `<div class="hall-empty">${escapeHtml(t('atlasErrorBody'))}</div>`;
+  }
+}
+
+async function loadCivicProfiles(){
+  const res = await fetch(`/civics-data?lang=${currentLanguage}`);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'civics unavailable');
+  civicProfiles = data.profiles || [];
+  return civicProfiles;
+}
+
+function civicSelectorHtml(profiles){
+  return `<div class="hall-section-title">${escapeHtml(t('civics'))}</div><div class="hall-grid">${profiles.map(p => `
+    <button type="button" class="hall-card civic-choice ${p.location === selectedCivicLocation ? 'active' : ''}" data-civic-location="${escapeHtml(p.location)}">
+      <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(p.name)}</span><span class="hall-card-tag">T${escapeHtml(p.tier)}</span></div>
+      <div class="hall-card-meta">${escapeHtml(p.government)} · ${escapeHtml(p.population.toLocaleString())}</div>
+    </button>`).join('')}</div>`;
+}
+
+function bindCivicChoices(){
+  hallBody.querySelectorAll('[data-civic-location]').forEach(button => button.addEventListener('click', () => {
+    selectedCivicLocation = button.dataset.civicLocation;
+    renderCivicsTab();
+  }));
+}
+
+async function renderCivicsTab(){
+  hallBody.innerHTML = `<div class="hall-panel-loading">${escapeHtml(t('civicsLoading'))}</div>`;
+  try {
+    const profiles = await loadCivicProfiles();
+    if (!profiles.length) { hallBody.innerHTML = `<div class="hall-empty">${escapeHtml(t('chooseLocation'))}</div>`; return; }
+    if (!selectedCivicLocation || !profiles.some(p => p.location === selectedCivicLocation)) selectedCivicLocation = profiles[0].location;
+    const [marketRes, shopsRes] = await Promise.all([
+      fetch(`/local-market?lang=${currentLanguage}&location=${encodeURIComponent(selectedCivicLocation)}`),
+      fetch(`/player-shops?lang=${currentLanguage}`)
+    ]);
+    const [marketPayload, shopsPayload] = await Promise.all([marketRes.json(), shopsRes.json()]);
+    if (!marketRes.ok || marketPayload.error) throw new Error(marketPayload.error || 'market unavailable');
+    if (!shopsRes.ok || shopsPayload.error) throw new Error(shopsPayload.error || 'shops unavailable');
+    const profile = marketPayload.market.location;
+    const items = marketPayload.market.items || [];
+    const shop = (shopsPayload.shops || []).find(item => item.location === selectedCivicLocation);
+    let optionsPayload = null;
+    if (!shop) {
+      const optionsRes = await fetch(`/shop-options?lang=${currentLanguage}&location=${encodeURIComponent(selectedCivicLocation)}`);
+      const optionsData = await optionsRes.json();
+      if (optionsRes.ok && !optionsData.error) optionsPayload = optionsData;
+    }
+    if (activeHallTab !== 'civics') return;
+    hallBody.innerHTML = `
+      ${civicSelectorHtml(profiles)}
+      <div class="hall-section-title">${escapeHtml(profile.name)}</div>
+      <div class="hall-card">
+        <div class="hall-card-header"><span class="hall-card-title">${escapeHtml(profile.government)}</span><span class="hall-card-tag">${escapeHtml(t('tax'))} ${escapeHtml(profile.tax_rate)}%</span></div>
+        <div class="hall-card-meta"><strong>${escapeHtml(t('governor'))}:</strong> ${escapeHtml(profile.governor)}</div>
+        <div class="civic-metrics">
+          <div class="civic-metric"><strong>${Number(profile.population).toLocaleString()}</strong><span>${escapeHtml(t('population'))}</span></div>
+          <div class="civic-metric"><strong>${escapeHtml(profile.tier)}</strong><span>${escapeHtml(t('market_tier'))}</span></div>
+          <div class="civic-metric"><strong>${escapeHtml(profile.security)}</strong><span>${escapeHtml(t('security'))}</span></div>
+          <div class="civic-metric"><strong>${escapeHtml(profile.prosperity)}</strong><span>${escapeHtml(t('prosperity'))}</span></div>
+          <div class="civic-metric"><strong>${escapeHtml(profile.loyalty)}</strong><span>${escapeHtml(t('loyalty'))}</span></div>
+          <div class="civic-metric"><strong>${escapeHtml(profile.tax_rate)}%</strong><span>${escapeHtml(t('tax'))}</span></div>
+        </div>
+        <div class="hall-card-meta"><strong>${escapeHtml(t('localSupply'))}:</strong> ${escapeHtml(profile.supply)}</div>
+        <div class="hall-card-meta"><strong>${escapeHtml(t('localDemand'))}:</strong> ${escapeHtml(profile.demand)}</div>
+      </div>
+      ${shopPanelHtml(selectedCivicLocation, shop, optionsPayload)}
+      <div class="hall-section-title">${escapeHtml(t('market'))}</div>
+      <div class="hall-card">${items.map(item => `<div class="market-row"><div><div class="market-name">${escapeHtml(item.name)}</div><div class="market-meta">${escapeHtml(item.description)}</div></div><div class="market-meta">${escapeHtml(t('price'))} ${formatCopper(item.buy_price_copper)}</div><div class="market-meta">${escapeHtml(t('stock'))} ${escapeHtml(item.stock)}</div></div>`).join('') || `<div class="hall-empty">—</div>`}</div>`;
+    bindCivicChoices();
+    bindShopControls(optionsPayload?.options || []);
+  } catch (err) {
+    hallBody.innerHTML = `<div class="hall-empty">${escapeHtml(t('localMarketError'))}</div>`;
+  }
+}
+
+function factionTagClass(faction){
+  if (!faction) return 'faction-unaligned';
+  const f = faction.toLowerCase();
+  if (f === 'player') return 'faction-player';
+  if (f === 'unaligned') return 'faction-unaligned';
+  return 'faction-enemy';
+}
+
+async function claimLoot(lootId, btn){
+  btn.disabled = true;
+  btn.textContent = 'Claiming…';
+  try {
+    await fetch('/claim-loot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loot_id: lootId })
+    });
+  } catch (err) { /* re-fetch below reflects true state either way */ }
+  await loadHallData();
+}
+
+function renderMilitaryTab(data){
+  const armies = data.armies || [];
+  const battles = data.battles || [];
+  const lootPiles = (data.loot_piles || []).filter(p => !p.claimed);
+
+  const armiesHtml = armies.length ? armies.map(a => `
+    <div class="army-card">
+      <div class="army-card-header">
+        <span class="army-card-title">${escapeHtml(a.name)}</span>
+        <span class="army-faction-tag ${factionTagClass(a.faction)}">${escapeHtml(a.faction || 'unaligned')}</span>
+      </div>
+      <div class="army-meta" style="border-top:none; padding-top:0; margin-top:0; margin-bottom:10px; font-size:12px; color:var(--page);">
+        ⚔ ${a.total_troops.toLocaleString()} troops${a.wounded_troops ? ` <span style="color:#d99388;">(${a.wounded_troops} wounded)</span>` : ''}
+      </div>
+      ${statBar('Morale', a.morale)}
+      ${statBar('Organization', a.organization)}
+      <div class="army-meta">
+        ${a.location ? `📍 ${escapeHtml(a.location)}` : 'Location unknown'}
+        ${a.commander ? ` · Commander: ${escapeHtml(a.commander)}` : ''}
+        · ${a.food_days} days food · ${escapeHtml(a.status)}
+      </div>
+    </div>`).join('') : `<div class="hall-empty">No armies tracked yet.</div>`;
+
+  const battlesHtml = battles.length ? battles.map(b => `
+    <div class="battle-entry">
+      <div class="battle-entry-title">Turn ${b.turn} — ${escapeHtml(b.attacker_name)} vs ${escapeHtml(b.defender_name)}${b.location ? ` at ${escapeHtml(b.location)}` : ''}</div>
+      <div class="battle-side">${escapeHtml(b.attacker_name)}: ${b.attacker_start} → ${b.attacker_end} <span class="casualties">(-${b.attacker_casualties})</span></div>
+      <div class="battle-side">${escapeHtml(b.defender_name)}: ${b.defender_start} → ${b.defender_end} <span class="casualties">(-${b.defender_casualties})</span></div>
+      <div class="battle-victor">Victor: ${escapeHtml(b.victor)}</div>
+    </div>`).join('') : `<div class="hall-empty">No battles recorded yet.</div>`;
+
+  const lootHtml = lootPiles.length ? lootPiles.map(p => `
+    <div class="loot-card">
+      <div class="loot-card-header">
+        <span class="loot-card-title">Loot at ${escapeHtml(p.location || 'unknown location')}</span>
+        <span class="item-qty">Turn ${p.created_turn}</span>
+      </div>
+      <div class="loot-card-items">
+        ${p.gold ? `${p.gold} gold<br>` : ''}
+        ${p.items.map(i => `${escapeHtml(i.name)}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join('<br>')}
+      </div>
+      <button type="button" class="claim-loot-btn" data-loot-id="${p.loot_id}">Claim</button>
+    </div>`).join('') : `<div class="hall-empty">No unclaimed loot.</div>`;
+
+  hallBody.innerHTML = `
+    <div class="hall-section-title">Armies</div>
+    ${armiesHtml}
+    <div class="hall-section-title">Unclaimed Loot</div>
+    ${lootHtml}
+    <div class="hall-section-title">Recent Battles</div>
+    ${battlesHtml}
+  `;
+
+  hallBody.querySelectorAll('.claim-loot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      claimLoot(parseInt(btn.getAttribute('data-loot-id'), 10), btn);
+    });
+  });
+}
+
+let characterDirectory = [];
+let activeCharacterFilter = 'all';
+
+function characterStatusLabel(status){
+  const labels = {active:t('active'), traveling:t('traveling'), captured:t('captured'), dead:t('dead')};
+  return labels[status] || t('unknownStatus');
+}
+
+function characterTypeLabel(type){
+  if (type === 'lord') return t('lords');
+  if (type === 'retainer') return t('companions');
+  return t('role');
+}
+
+function characterPortrait(character){
+  const path = character?.portrait_slug ? PORTRAIT_ASSETS_BY_SLUG[character.portrait_slug] : '';
+  return path ? `<img class="directory-avatar" src="${path}" alt="${escapeHtml(character.name)}" loading="lazy">` : `<div class="directory-avatar directory-avatar-placeholder" aria-hidden="true">${escapeHtml((character.name || '?').slice(0,1))}</div>`;
+}
+
+function renderCharacterDirectoryCards(characters){
+  if (!characters.length) return `<div class="directory-empty">${escapeHtml(t('noCharacters'))}</div>`;
+  return `<div class="character-directory-grid">${characters.map(character => {
+    const status = character.availability || 'active';
+    const retainer = character.retainer;
+    const location = character.location || character.home_location || '—';
+    const type = characterTypeLabel(character.type);
+    const extraMeta = status === 'traveling' && character.destination
+      ? `<div><strong>${escapeHtml(t('destination'))}:</strong> ${escapeHtml(character.destination)}${character.available_at ? ` · ${escapeHtml(character.available_at)}` : ''}</div>`
+      : (character.reason ? `<div><strong>${escapeHtml(t('status'))}:</strong> ${escapeHtml(character.reason)}</div>` : '');
+    const retainerMeta = retainer ? `<div class="directory-traits">
+      ${retainer.loyalty != null ? `<span class="directory-trait">${escapeHtml(t('loyalty'))}: ${retainer.loyalty}</span>` : ''}
+      ${retainer.morale != null ? `<span class="directory-trait">${escapeHtml(t('morale'))}: ${retainer.morale}</span>` : ''}
+      ${retainer.assignment ? `<span class="directory-trait">${escapeHtml(retainer.assignment)}</span>` : ''}
+    </div>` : '';
+    return `<article class="directory-card">
+      <div class="directory-card-header">
+        ${characterPortrait(character)}
+        <div class="directory-identity">
+          <div class="directory-name">${escapeHtml(character.name)}</div>
+          <div class="directory-title">${escapeHtml(character.title || type)}${character.house ? ` · ${escapeHtml(character.house)}` : ''}</div>
+          <span class="directory-status" data-status="${escapeHtml(status)}">${escapeHtml(characterStatusLabel(status))}</span>
+        </div>
+      </div>
+      ${character.biography ? `<p class="directory-bio">${escapeHtml(character.biography)}</p>` : ''}
+      ${character.agenda ? `<p class="directory-bio"><strong>${escapeHtml(t('role'))}:</strong> ${escapeHtml(character.agenda)}</p>` : ''}
+      <div class="directory-meta">
+        <div><strong>${escapeHtml(t('currentLocation'))}:</strong> ${escapeHtml(location)}</div>
+        ${character.home_location && character.home_location !== location ? `<div><strong>${escapeHtml(t('lastSeen'))}:</strong> ${escapeHtml(character.home_location)}</div>` : ''}
+        ${extraMeta}
+      </div>
+      ${retainerMeta}
+    </article>`;
+  }).join('')}</div>`;
+}
+
+async function renderCharactersTab(){
+  hallBody.innerHTML = `<div class="hall-panel-loading">${escapeHtml(t('charactersLoading'))}</div>`;
+  try {
+    const res = await fetch(`/characters-data?lang=${currentLanguage}`);
+    const payload = await res.json();
+    if (!res.ok || payload.error) throw new Error(payload.error || 'characters unavailable');
+    characterDirectory = payload.characters || [];
+    if (activeHallTab !== 'directory') return;
+    const counts = {
+      all: characterDirectory.length,
+      lord: characterDirectory.filter(c => c.type === 'lord').length,
+      retainer: characterDirectory.filter(c => c.type === 'retainer').length,
+    };
+    const filtered = activeCharacterFilter === 'all'
+      ? characterDirectory
+      : characterDirectory.filter(c => c.type === activeCharacterFilter);
+    hallBody.innerHTML = `
+      <div class="character-directory-toolbar">
+        <p class="character-directory-intro">${escapeHtml(t('characterDirectoryIntro'))}</p>
+        <select class="character-directory-filter" id="character-directory-filter" aria-label="${escapeHtml(t('characterDirectory'))}">
+          <option value="all">${escapeHtml(t('allCharacters'))} (${counts.all})</option>
+          <option value="lord">${escapeHtml(t('lords'))} (${counts.lord})</option>
+          <option value="retainer">${escapeHtml(t('companions'))} (${counts.retainer})</option>
+        </select>
+      </div>
+      ${renderCharacterDirectoryCards(filtered)}`;
+    const filter = document.getElementById('character-directory-filter');
+    filter.value = activeCharacterFilter;
+    filter.addEventListener('change', () => {
+      activeCharacterFilter = filter.value;
+      renderCharactersTab();
+    });
+  } catch (err) {
+    hallBody.innerHTML = `<div class="directory-empty">${escapeHtml(t('charactersUnavailable'))}</div>`;
+  }
+}
+
+const HALL_RENDERERS = {
+  character: renderCharacterTab,
+  directory: renderCharactersTab,
+  holdings: renderHoldingsTab,
+  retainers: renderRetainersTab,
+  quests: renderQuestsTab,
+  factions: renderFactionsTab,
+  inventory: renderInventoryTab,
+  economy: renderEconomyTab,
+  history: renderHistoryTab,
+  civics: renderCivicsTab,
+  military: renderMilitaryTab,
+};
+
+function renderActiveHallTab(){
+  if (!hallData) return;
+  HALL_RENDERERS[activeHallTab](hallData);
+}
+
+async function loadHallData(){
+  hallBody.innerHTML = `<div class="hall-panel-loading">Consulting the ledgers…</div>`;
+  try {
+    const res = await fetch('/dashboard-data');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    hallData = data;
+    updateCampaignClock(data.world_clock);
+    renderActiveHallTab();
+  } catch (err) {
+    hallBody.innerHTML = `<div class="hall-empty">The ledgers could not be reached.</div>`;
+  }
+}
+
+document.getElementById('hall-btn').addEventListener('click', () => {
+  hallOverlay.classList.add('open');
+  loadHallData();
+});
+document.getElementById('hall-close').addEventListener('click', () => {
+  hallOverlay.classList.remove('open');
+});
+hallOverlay.addEventListener('click', (e) => {
+  if (e.target === hallOverlay) hallOverlay.classList.remove('open');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') hallOverlay.classList.remove('open');
+});
+
+hallTabs.addEventListener('click', (e) => {
+  const tab = e.target.closest('.hall-tab');
+  if (!tab) return;
+  hallTabs.querySelectorAll('.hall-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  activeHallTab = tab.getAttribute('data-tab');
+  renderActiveHallTab();
+});
+
+// ---------------- Atlas of Aldenmere (data-driven, expandable by the engine) ----------------
+const mapOverlay = document.getElementById('map-overlay');
+const mapTooltip = document.getElementById('map-tooltip');
+const mapPinsGroup = document.getElementById('map-pins');
+const mapRegionsGroup = document.getElementById('map-regions');
+const atlasSidebar = document.getElementById('atlas-sidebar');
+const atlasCount = document.getElementById('atlas-count');
+const atlasSubtitle = document.getElementById('atlas-subtitle');
+const atlasFilters = document.getElementById('atlas-filters');
+const atlasStage = document.getElementById('atlas-stage');
+const mapSvg = document.getElementById('map-svg');
+const atlasZoomReadout = document.getElementById('atlas-zoom-readout');
+const atlasZoomIn = document.getElementById('atlas-zoom-in');
+const atlasZoomOut = document.getElementById('atlas-zoom-out');
+const atlasZoomReset = document.getElementById('atlas-zoom-reset');
+const atlasStyleToggle = document.getElementById('atlas-style-toggle');
+
+const KIND_COLORS = {
+  seat: '#285f91', settlement: '#8d9eaf', town: '#8d9eaf', village: '#9aa876', city: '#596f7c',
+  port: '#7fa0a8', crown: '#78b7e6', castle: '#846747', fortress: '#846747',
+  hostile: '#7a2320', wilderness: '#667f60', monastery: '#aa8b56', ruin: '#7d7381', unknown: '#526273'
+};
+const KIND_LABELS = {
+  seat: 'مقعد حكم', settlement: 'بلدة', town: 'بلدة', village: 'قرية', city: 'مدينة', port: 'ميناء',
+  crown: 'موضع ملكي', castle: 'قلعة', fortress: 'حصن', hostile: 'نزاع', wilderness: 'برية',
+  monastery: 'دير', ruin: 'أطلال', unknown: 'أرض مجهولة'
+};
+const KIND_LABELS_EN = {
+  seat: 'Seat of rule', settlement: 'Settlement', town: 'Town', village: 'Village', city: 'City', port: 'Port',
+  crown: 'Crown site', castle: 'Castle', fortress: 'Fortress', hostile: 'Conflict', wilderness: 'Wilderness',
+  monastery: 'Monastery', ruin: 'Ruins', unknown: 'Unknown land'
+};
+const REGION_NAMES_EN = {
+  ashvale:'Ashvale', crownlands:'Crownlands', wolf_march:'Wolf Marches', western_coast:'Western Coast', eastern_gentry:'Eastern Gentry',
+  greywood:'Old Greywood', southern_reach:'Southern Reach', frostward:'Frostward', far_crossing:'The Far Crossing'
+};
+let atlasData = null;
+let activeMapFilter = 'all';
+let selectedLocationName = null;
+let atlasView = { scale: 1, x: 0, y: 0 };
+let atlasStyle = 'raster';
+let atlasPan = null;
+const atlasPointers = new Map();
+let atlasPinch = null;
+let suppressMapPinClickUntil = 0;
+const PORTRAIT_ASSETS = {
+  'مويّد مودسبين': '/static/assets/portrait_moayed_modspin.png',
+  'إيزولد مودسبين': '/static/assets/portrait_isolde_modspin.png',
+  'ريفنث كين': '/static/assets/portrait_reventh_kaine.png',
+  'سيلين فوس': '/static/assets/portrait_selene_voss.png',
+  'مارا كراي': '/static/assets/portrait_marra_cray.png',
+  'أستريد وولفكراون': '/static/assets/portrait_astrid_wolfcrown.png'
+};
+const FORTRESS_ASSETS = {
+  'Ashvale Hold': '/static/assets/fortress_ashvale_hold.png',
+  'قلعة رماد الوادي': '/static/assets/fortress_ashvale_hold.png',
+  'Bronzegate': '/static/assets/fortress_bronzegate.png',
+  'بوابة البرونز': '/static/assets/fortress_bronzegate.png',
+  'Severlock': '/static/assets/fortress_severlock.png',
+  'سيفرلوك': '/static/assets/fortress_severlock.png',
+  'Wolfcrown': '/static/assets/fortress_wolfcrown.png',
+  'Wolfcrown Castle': '/static/assets/fortress_wolfcrown.png',
+  'وولفكراون': '/static/assets/fortress_wolfcrown.png'
+};
+const PORTRAIT_ASSETS_BY_SLUG = {
+  moayed: '/static/assets/portrait_moayed_modspin.png',
+  isolde: '/static/assets/portrait_isolde_modspin.png',
+  reventh_kaine: '/static/assets/portrait_reventh_kaine.png',
+  selene_voss: '/static/assets/portrait_selene_voss.png',
+  marra_cray: '/static/assets/portrait_marra_cray.png',
+  astrid_wolfcrown: '/static/assets/portrait_astrid_wolfcrown.png'
+};
+function portraitAsset(lord){ return (lord && (PORTRAIT_ASSETS[lord.name] || PORTRAIT_ASSETS_BY_SLUG[lord.slug])) || ''; }
+function locationKey(loc){ return loc?.canonical_name || loc?.name || ''; }
+function fortressAsset(loc){ return (loc && (FORTRESS_ASSETS[loc.name] || FORTRESS_ASSETS[locationKey(loc)])) || ''; }
+
+function atlasRegion(regionSlug){
+  return (atlasData?.regions || []).find(r => r.slug === regionSlug);
+}
+function civicForLocation(location){ return civicProfiles.find(profile => profile.location === location); }
+function locationDisplayName(loc){
+  if (!loc.discovered) return t('unknownLocation');
+  return civicForLocation(locationKey(loc))?.name || loc.name;
+}
+function locationDescription(loc){
+  if (!loc.discovered) return t('unknownDesc');
+  const civic = civicForLocation(locationKey(loc));
+  return loc.description || (currentLanguage === 'en' && civic
+    ? `${civic.government}. ${t('localSupply')}: ${civic.supply}. ${t('localDemand')}: ${civic.demand}.`
+    : t('noDesc'));
+}
+function kindLabel(kind){ return (currentLanguage === 'en' ? KIND_LABELS_EN : KIND_LABELS)[kind] || kind; }
+function shouldShowLabel(loc){
+  if (activeMapFilter !== 'all') return true;
+  return ['seat', 'city', 'crown', 'hostile'].includes(loc.kind) && loc.discovered;
+}
+function matchesMapFilter(loc){
+  if (activeMapFilter === 'city') return ['city', 'town', 'settlement', 'village'].includes(loc.kind);
+  if (activeMapFilter === 'castle') return ['seat', 'castle', 'fortress', 'crown'].includes(loc.kind);
+  if (activeMapFilter === 'port') return loc.kind === 'port';
+  if (activeMapFilter === 'known') return Boolean(loc.discovered);
+  if (activeMapFilter === 'new') return Boolean(loc.dynamic);
+  return true;
+}
+function escapeInline(value){ return escapeHtml(String(value || '')); }
+
+function renderAtlasRegions(){
+  mapRegionsGroup.innerHTML = '';
+  (atlasData?.regions || []).forEach(region => {
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('class', 'map-region-label');
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('x', Math.round(region.x * 2560));
+    label.setAttribute('y', Math.round(region.y * 1440));
+    label.textContent = currentLanguage === 'en' ? (REGION_NAMES_EN[region.slug] || region.name) : region.name;
+    mapRegionsGroup.appendChild(label);
+  });
+}
+
+function renderAtlasSidebar(loc){
+  const lords = (atlasData?.lords || []).filter(l => l.discovered).slice(0, 5);
+  const lore = (atlasData?.lore || []).filter(l => l.discovered).slice(0, 3);
+  const relatedLord = loc ? (atlasData?.lords || []).find(l => (l.canonical_seat || l.seat) === locationKey(loc) && l.discovered) : null;
+  const isEnglish = currentLanguage === 'en';
+  if (!loc){
+    atlasSidebar.innerHTML = `
+      <div class="atlas-detail-kicker">${escapeInline(atlasData?.world?.current_age || (isEnglish ? 'World Atlas' : 'أطلس العالم'))}</div>
+      <div class="atlas-detail-title">${escapeInline(atlasData?.world?.name || (isEnglish ? 'The Continent of Aldenmere' : 'قارة ألدينمير'))}</div>
+      <div class="atlas-detail-text">${escapeInline(atlasData?.world?.premise || (isEnglish ? 'Choose a location to read its record.' : 'اختر موقعًا لقراءة سجلّه.'))}</div>
+      <div class="atlas-list-title">${isEnglish ? 'Notable figures' : 'شخصيات بارزة'}</div>
+      ${lords.map(l => `<div class="lord-mini">${portraitAsset(l) ? `<img src="${portraitAsset(l)}" alt="${escapeInline(l.name)}">` : ''}<div class="atlas-entry"><div class="atlas-entry-title">${escapeInline(l.name)}</div><div class="atlas-entry-meta">${escapeInline(l.title)} · ${escapeInline(l.public_agenda)}</div></div></div>`).join('') || `<div class="atlas-entry-meta">${isEnglish ? 'No names have appeared yet.' : 'لم تظهر أسماء بعد.'}</div>`}
+      <div class="atlas-list-title">${isEnglish ? 'From memory' : 'من الذاكرة'}</div>
+      ${lore.map(item => `<div class="atlas-entry"><div class="atlas-entry-title">${escapeInline(item.title)}</div><div class="atlas-entry-meta">${escapeInline(item.body)}</div></div>`).join('') || `<div class="atlas-entry-meta">${isEnglish ? 'No records have been discovered yet.' : 'لم تُكتشف سجلات بعد.'}</div>`}
+    `;
+    return;
+  }
+  const region = atlasRegion(loc.region);
+  const question = isEnglish ? `I want to learn more about ${locationDisplayName(loc)}.` : `أريد أن أعرف المزيد عن ${locationDisplayName(loc)}.`;
+  const fortressArt = fortressAsset(loc);
+  const portraitArt = portraitAsset(relatedLord);
+  atlasSidebar.innerHTML = `
+    ${fortressArt ? `<img class="asset-art fortress-art" src="${fortressArt}" alt="${escapeInline(locationDisplayName(loc))}">` : ''}
+    ${portraitArt ? `<img class="asset-art portrait-art" src="${portraitArt}" alt="${escapeInline(relatedLord.name)}">` : ''}
+    <div class="atlas-detail-kicker">${loc.dynamic ? (currentLanguage === 'en' ? 'New campaign discovery' : 'اكتشاف جديد في الحملة') : escapeInline(kindLabel(loc.kind))}</div>
+    <div class="atlas-detail-title">${escapeInline(locationDisplayName(loc))}</div>
+    <div class="atlas-detail-text">${escapeInline(locationDescription(loc))}</div>
+    ${region ? `<div class="atlas-detail-meta">${escapeInline(currentLanguage === 'en' ? (REGION_NAMES_EN[region.slug] || region.name) : region.name)} — ${escapeInline(region.description || '')}</div>` : ''}
+    ${relatedLord ? `<div class="atlas-list-title">${currentLanguage === 'en' ? 'Ruler of this place' : 'صاحب الموضع'}</div><div class="atlas-entry"><div class="atlas-entry-title">${escapeInline(relatedLord.name)} — ${escapeInline(relatedLord.title)}</div><div class="atlas-entry-meta">${escapeInline(relatedLord.biography)}</div></div>` : ''}
+    ${loc.discovered ? `<div id="atlas-civic-data"></div><button class="atlas-action" type="button" id="atlas-ask">${escapeInline(t('continueStory'))}</button>` : ''}
+  `;
+  if (loc.discovered) loadAtlasCivicData(locationKey(loc));
+  const ask = document.getElementById('atlas-ask');
+  if (ask) ask.addEventListener('click', () => {
+    mapOverlay.classList.remove('open');
+    actionEl.value = question;
+    actionEl.dispatchEvent(new Event('input'));
+    actionEl.focus();
+  });
+}
+
+async function loadAtlasCivicData(location){
+  const host = document.getElementById('atlas-civic-data');
+  if (!host) return;
+  try {
+    const [civicRes, marketRes] = await Promise.all([
+      fetch(`/civics-data?lang=${currentLanguage}&location=${encodeURIComponent(location)}`),
+      fetch(`/local-market?lang=${currentLanguage}&location=${encodeURIComponent(location)}`)
+    ]);
+    const civicPayload = await civicRes.json();
+    const marketPayload = await marketRes.json();
+    if (!civicRes.ok || !marketRes.ok || civicPayload.error || marketPayload.error || selectedLocationName !== location) return;
+    const profile = civicPayload.profile;
+    const items = marketPayload.market.items || [];
+    host.innerHTML = `<div class="atlas-list-title">${escapeHtml(t('civics'))}</div>
+      <div class="atlas-entry"><div class="atlas-entry-title">${escapeHtml(profile.government)}</div><div class="atlas-entry-meta">${escapeHtml(t('population'))}: ${Number(profile.population).toLocaleString()} · ${escapeHtml(t('tax'))}: ${escapeHtml(profile.tax_rate)}%</div></div>
+      <div class="atlas-list-title">${escapeHtml(t('market'))}</div>
+      <div class="atlas-entry-meta">${items.slice(0,3).map(item => `${escapeHtml(item.name)} — ${formatCopper(item.buy_price_copper)}`).join('<br>')}</div>
+      <button class="atlas-action" type="button" id="atlas-open-civics">${escapeHtml(t('open_shop'))} · ${escapeHtml(t('civics'))}</button>`;
+    document.getElementById('atlas-open-civics')?.addEventListener('click', () => {
+      selectedCivicLocation = location;
+      mapOverlay.classList.remove('open');
+      hallOverlay.classList.add('open');
+      activeHallTab = 'civics';
+      hallTabs.querySelectorAll('.hall-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.tab === 'civics'));
+      loadHallData();
+    });
+  } catch (err) { /* A location without a civic profile remains a lore-only map entry. */ }
+}
+
+function renderMapPins(){
+  if (!atlasData) return;
+  const locations = (atlasData.locations || []).filter(matchesMapFilter);
+  mapPinsGroup.innerHTML = '';
+  locations.forEach(loc => {
+    const color = KIND_COLORS[loc.kind] || KIND_COLORS.unknown;
+    const px = Math.round((loc.x ?? 0.5) * 2560);
+    const py = Math.round((loc.y ?? 0.5) * 1440);
+    const isSeat = loc.kind === 'seat';
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', `map-pin${isSeat ? ' current' : ''}${loc.discovered ? '' : ' undiscovered'}${loc.dynamic ? ' dynamic' : ''}${selectedLocationName === locationKey(loc) ? ' selected' : ''}`);
+    g.setAttribute('transform', `translate(${px},${py})`);
+    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    glow.setAttribute('class', 'pin-glow'); glow.setAttribute('r', isSeat ? '26' : '19'); glow.setAttribute('fill', color);
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('class', 'pin-dot'); dot.setAttribute('r', isSeat ? '11' : '8'); dot.setAttribute('fill', color); dot.setAttribute('stroke', '#0a111b'); dot.setAttribute('stroke-width', '2');
+    g.appendChild(glow); g.appendChild(dot);
+    if (shouldShowLabel(loc)) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('class', 'map-label'); label.setAttribute('x', '16'); label.setAttribute('y', '-12'); label.textContent = locationDisplayName(loc); g.appendChild(label);
+    }
+    g.addEventListener('mouseenter', () => {
+      mapTooltip.querySelector('.mt-title').textContent = locationDisplayName(loc);
+      mapTooltip.querySelector('.mt-desc').textContent = locationDescription(loc);
+      mapTooltip.classList.add('show');
+    });
+    g.addEventListener('mousemove', (e) => {
+      const stage = document.querySelector('.atlas-stage').getBoundingClientRect();
+      mapTooltip.style.left = (e.clientX - stage.left) + 'px';
+      mapTooltip.style.top = (e.clientY - stage.top) + 'px';
+    });
+    g.addEventListener('mouseleave', () => mapTooltip.classList.remove('show'));
+    g.addEventListener('click', () => {
+      if (Date.now() < suppressMapPinClickUntil) return;
+      selectedLocationName = locationKey(loc);
+      renderMapPins();
+      renderAtlasSidebar(loc);
+    });
+    mapPinsGroup.appendChild(g);
+  });
+    atlasCount.textContent = currentLanguage === 'en'
+      ? `${locations.length} ${t('at')} ${(atlasData.locations || []).length} ${t('locations')}`
+      : `${locations.length} من ${(atlasData.locations || []).length} موضعًا في الأطلس`;
+}
+
+async function loadMapData(){
+  try {
+    const [res, civicRes] = await Promise.all([fetch(`/map-data?lang=${currentLanguage}`), fetch(`/civics-data?lang=${currentLanguage}`)]);
+    if (!res.ok) throw new Error('atlas unavailable');
+    atlasData = await res.json();
+    if (civicRes.ok) { const civicPayload = await civicRes.json(); civicProfiles = civicPayload.profiles || []; }
+    atlasSubtitle.textContent = currentLanguage === 'en' ? STATIC_UI.en.mapSubtitle : `${atlasData.world?.tagline || 'سجل الطرق والحدود.'} — ${atlasData.world?.current_year || ''}`;
+    renderAtlasRegions();
+    renderMapPins();
+    const selected = (atlasData.locations || []).find(l => locationKey(l) === selectedLocationName);
+    renderAtlasSidebar(selected || null);
+  } catch (err) {
+    atlasCount.textContent = t('atlasUnavailable');
+    atlasSidebar.innerHTML = `<div class="atlas-detail-title">${escapeHtml(t('atlasErrorTitle'))}</div><div class="atlas-detail-text">${escapeHtml(t('atlasErrorBody'))}</div>`;
+  }
+}
+
+atlasFilters.addEventListener('click', (e) => {
+  const button = e.target.closest('.atlas-filter');
+  if (!button) return;
+  activeMapFilter = button.dataset.filter || 'all';
+  atlasFilters.querySelectorAll('.atlas-filter').forEach(b => b.classList.toggle('active', b === button));
+  renderMapPins();
+});
+
+function updateAtlasStyleToggle(){
+  if (!atlasStyleToggle) return;
+  const showingRaster = atlasStyle === 'raster';
+  atlasStyleToggle.textContent = showingRaster ? t('mapStyleVector') : t('mapStyleRaster');
+  atlasStyleToggle.title = t('mapStyleToggle');
+  atlasStyleToggle.setAttribute('aria-label', t('mapStyleToggle'));
+  atlasStyleToggle.setAttribute('aria-pressed', String(showingRaster));
+}
+function applyAtlasStyle(){
+  if (!mapSvg) return;
+  mapSvg.classList.toggle('raster-mode', atlasStyle === 'raster');
+  updateAtlasStyleToggle();
+}
+function applyAtlasView(){
+  if (!mapSvg) return;
+  mapSvg.style.transform = `translate(${atlasView.x}px, ${atlasView.y}px) scale(${atlasView.scale})`;
+  atlasZoomReadout.textContent = `${Math.round(atlasView.scale * 100)}%`;
+  atlasZoomOut.disabled = atlasView.scale <= 1;
+  atlasZoomIn.disabled = atlasView.scale >= 2.8;
+}
+function setAtlasZoom(nextScale){
+  const scale = Math.max(1, Math.min(2.8, Number(nextScale.toFixed(2))));
+  if (scale === 1){ atlasView.x = 0; atlasView.y = 0; }
+  atlasView.scale = scale;
+  applyAtlasView();
+}
+function resetAtlasView(){ atlasView = { scale: 1, x: 0, y: 0 }; applyAtlasView(); }
+function atlasEventIsExcluded(target){
+  // Zoom controls must remain clickable; map pins are draggable map content.
+  return Boolean(target?.closest?.('.atlas-map-controls'));
+}
+function atlasPointDistance(a, b){
+  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+}
+function atlasPointCenter(a, b){
+  return { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 };
+}
+function beginAtlasPan(e){
+  if (!atlasStage || (e.pointerType === 'mouse' && e.button !== 0) || atlasEventIsExcluded(e.target)) return;
+  e.preventDefault();
+  atlasPointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType });
+  try { atlasStage.setPointerCapture(e.pointerId); } catch (_) { /* Pointer capture is optional. */ }
+  if (atlasPointers.size === 1){
+    atlasPan = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, startX: atlasView.x, startY: atlasView.y, moved: false };
+    atlasStage.classList.add('is-panning');
+    mapTooltip.classList.remove('show');
+    return;
+  }
+  if (atlasPointers.size === 2){
+    const points = [...atlasPointers.values()];
+    atlasPinch = {
+      distance: Math.max(1, atlasPointDistance(points[0], points[1])),
+      center: atlasPointCenter(points[0], points[1]),
+      scale: atlasView.scale,
+      x: atlasView.x,
+      y: atlasView.y,
+      moved: true
+    };
+    if (atlasPan) atlasPan.moved = true;
+    mapTooltip.classList.remove('show');
+  }
+}
+function moveAtlasPan(e){
+  if (!atlasPointers.has(e.pointerId)) return;
+  e.preventDefault();
+  atlasPointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType });
+  if (atlasPointers.size >= 2 && atlasPinch){
+    const points = [...atlasPointers.values()].slice(0, 2);
+    const distance = Math.max(1, atlasPointDistance(points[0], points[1]));
+    const center = atlasPointCenter(points[0], points[1]);
+    const nextScale = Math.max(1, Math.min(2.8, Number((atlasPinch.scale * distance / atlasPinch.distance).toFixed(2))));
+    atlasView.scale = nextScale;
+    atlasView.x = atlasPinch.x + (center.clientX - atlasPinch.center.clientX);
+    atlasView.y = atlasPinch.y + (center.clientY - atlasPinch.center.clientY);
+    applyAtlasView();
+    return;
+  }
+  if (!atlasPan || atlasPan.pointerId !== e.pointerId) return;
+  const dx = e.clientX - atlasPan.x;
+  const dy = e.clientY - atlasPan.y;
+  atlasPan.moved = atlasPan.moved || Math.abs(dx) > 4 || Math.abs(dy) > 4;
+  atlasView.x = atlasPan.startX + dx;
+  atlasView.y = atlasPan.startY + dy;
+  applyAtlasView();
+}
+function releaseAtlasPan(e){
+  const releasedId = e?.pointerId;
+  if (releasedId != null) atlasPointers.delete(releasedId);
+  if (atlasPinch){
+    suppressMapPinClickUntil = Date.now() + 240;
+    atlasPinch = null;
+  }
+  if (atlasPointers.size === 1){
+    const [remainingId, point] = atlasPointers.entries().next().value;
+    atlasPan = { pointerId: remainingId, x: point.clientX, y: point.clientY, startX: atlasView.x, startY: atlasView.y, moved: true };
+    atlasStage.classList.add('is-panning');
+  } else if (atlasPointers.size === 0){
+    if (atlasPan?.moved) suppressMapPinClickUntil = Date.now() + 180;
+    atlasPan = null;
+    atlasStage.classList.remove('is-panning');
+  }
+  try {
+    if (releasedId != null && atlasStage.hasPointerCapture?.(releasedId)) atlasStage.releasePointerCapture(releasedId);
+  } catch (_) { /* Pointer capture may already have been released. */ }
+  if (e) mapTooltip.classList.remove('show');
+}
+atlasZoomIn.addEventListener('click', () => setAtlasZoom(atlasView.scale + 0.2));
+atlasZoomOut.addEventListener('click', () => setAtlasZoom(atlasView.scale - 0.2));
+if (atlasStyleToggle) atlasStyleToggle.addEventListener('click', () => {
+  atlasStyle = atlasStyle === 'vector' ? 'raster' : 'vector';
+  applyAtlasStyle();
+});
+atlasZoomReset.addEventListener('click', resetAtlasView);
+atlasStage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  setAtlasZoom(atlasView.scale + (e.deltaY < 0 ? 0.14 : -0.14));
+}, { passive: false });
+atlasStage.addEventListener('pointerdown', beginAtlasPan, { passive: false });
+atlasStage.addEventListener('pointermove', moveAtlasPan, { passive: false });
+atlasStage.addEventListener('pointerup', releaseAtlasPan);
+atlasStage.addEventListener('pointercancel', releaseAtlasPan);
+atlasStage.addEventListener('lostpointercapture', releaseAtlasPan);
+// Legacy fallback for browsers that expose mouse events but not Pointer Events.
+if (!('PointerEvent' in window)){
+  const mousePointer = (e) => ({
+    ...e,
+    pointerId: 'mouse-fallback',
+    pointerType: 'mouse',
+    clientX: e.clientX,
+    clientY: e.clientY,
+    button: e.button,
+    preventDefault: () => e.preventDefault(),
+    target: e.target
+  });
+  atlasStage.addEventListener('mousedown', (e) => beginAtlasPan(mousePointer(e)));
+  atlasStage.addEventListener('mousemove', (e) => moveAtlasPan(mousePointer(e)));
+  window.addEventListener('mouseup', (e) => releaseAtlasPan(mousePointer(e)));
+}
+atlasStage.addEventListener('dragstart', (e) => e.preventDefault());
+atlasStage.addEventListener('selectstart', (e) => e.preventDefault());
+atlasStage.addEventListener('dblclick', (e) => {
+  if (!e.target.closest?.('.map-pin') && !e.target.closest?.('.atlas-map-controls')) setAtlasZoom(atlasView.scale + 0.32);
+});
+applyAtlasStyle();
+applyAtlasView();
+document.getElementById('map-btn').addEventListener('click', () => { mapOverlay.classList.add('open'); loadMapData(); });
+document.getElementById('map-close').addEventListener('click', () => mapOverlay.classList.remove('open'));
+mapOverlay.addEventListener('click', (e) => { if (e.target === mapOverlay) mapOverlay.classList.remove('open'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') mapOverlay.classList.remove('open'); });
+
+
+// ---------------- persistent HUD ----------------
+document.getElementById('hud-hall').addEventListener('click', () => {
+  hallOverlay.classList.add('open');
+  loadHallData();
+});
+document.getElementById('hud-map').addEventListener('click', () => {
+  mapOverlay.classList.add('open');
+  loadMapData();
+});
+document.getElementById('hud-recap').addEventListener('click', () => {
+  actionEl.value = '/recap';
+  submitAction();
+});
+
+// ---------------- quick command buttons ----------------
+document.getElementById('quick-commands').addEventListener('click', (e) => {
+  const btn = e.target.closest('.qc-btn');
+  if (!btn) return;
+
+  const full = btn.getAttribute('data-cmd');
+  const partial = btn.getAttribute('data-cmd-partial');
+
+  if (full) {
+    actionEl.value = full;
+    submitAction();
+  } else if (partial) {
+    actionEl.value = partial;
+    actionEl.focus();
+    actionEl.setSelectionRange(partial.length, partial.length);
+    actionEl.dispatchEvent(new Event('input'));
+  }
+});
+
+let turnCount = 0;
+let lastCampaignClock = null;
+
+function updateTurnIndicator(n){
+  document.getElementById('turn-indicator').textContent = `${currentLanguage === 'en' ? 'Scene' : 'المشهد'} ${n || '—'}`;
+  document.getElementById('hud-turn').textContent = `${currentLanguage === 'en' ? 'Scene' : 'المشهد'} ${n || '—'}`;
+}
+
+function updateCampaignClock(clock){
+  const target = document.getElementById('campaign-clock');
+  if (!target) return;
+  if (!clock) {
+    target.textContent = currentLanguage === 'en' ? 'Campaign time —' : 'وقت الحملة —';
+    return;
+  }
+  lastCampaignClock = clock;
+  const day = Number(clock.day || 1);
+  const hour = String(Number(clock.hour || 0)).padStart(2, '0');
+  const minute = String(Number(clock.minute || 0)).padStart(2, '0');
+  target.textContent = currentLanguage === 'en'
+    ? `Campaign time · Day ${day} · ${hour}:${minute}`
+    : `وقت الحملة · اليوم ${day} · ${hour}:${minute}`;
+}
+
+function showTimeProgressionToast(progress, arrivals){
+  if (!progress) return;
+  updateCampaignClock(progress.clock);
+  const stack = document.getElementById('toast-stack');
+  if (!stack) return;
+  const toast = document.createElement('div');
+  toast.className = 'level-toast';
+  const minutes = Number(progress.elapsed_minutes || 0);
+  const duration = minutes >= 60
+    ? `${Math.floor(minutes / 60)}${currentLanguage === 'en' ? 'h' : ' س'}${minutes % 60 ? ` ${minutes % 60}${currentLanguage === 'en' ? 'm' : ' د'}` : ''}`
+    : `${minutes}${currentLanguage === 'en' ? 'm' : ' دقيقة'}`;
+  const explicit = progress.mode === 'explicit_wait' || progress.mode === 'explicit_jump';
+  const heading = currentLanguage === 'en'
+    ? (explicit ? 'Time advanced by your request' : 'Time advanced')
+    : (explicit ? 'تقدّم الزمن بطلبك' : 'تقدّم زمن الحملة');
+  const arrivalText = (arrivals || []).length
+    ? (currentLanguage === 'en' ? ` Arrival: ${(arrivals || []).map(item => item.name).join(', ')}.` : ` وصل: ${(arrivals || []).map(item => item.name).join('، ')}.`)
+    : '';
+  toast.innerHTML = `◷ ${escapeHtml(heading)}<span class="lt-sub">${escapeHtml(duration + arrivalText)}</span>`;
+  stack.appendChild(toast);
+  setTimeout(() => toast.remove(), 4200);
+}
+
+function paragraphize(text){
+  return text
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => `<p>${p}</p>`)
+    .join('');
+}
+
+// typewriter-ish reveal, paragraph by paragraph, fast enough not to annoy
+function revealText(container, text){
+  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  container.innerHTML = '';
+  let pi = 0;
+
+  function nextParagraph(){
+    if(pi >= paras.length){ return; }
+    const p = document.createElement('p');
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    container.appendChild(p);
+
+    const words = paras[pi].split(' ');
+    let wi = 0;
+
+    function nextWord(){
+      if(wi < words.length){
+        p.textContent = words.slice(0, wi+1).join(' ');
+        p.appendChild(cursor);
+        if (wi % 4 === 0) playQuillTick();
+        wi++;
+        setTimeout(nextWord, 14);
+      } else {
+        cursor.remove();
+        pi++;
+        setTimeout(nextParagraph, 80);
+      }
+    }
+    nextWord();
+  }
+  nextParagraph();
+}
+
+function showLevelUpToasts(levelUps){
+  if (!levelUps || !levelUps.length) return;
+  playLevelUpChime();
+  const stack = document.getElementById('toast-stack');
+  levelUps.forEach(lu => {
+    const toast = document.createElement('div');
+    toast.className = 'level-toast';
+    const label = (lu.name || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    toast.innerHTML = `⬆ ${escapeHtml(label)} reached Level ${lu.level}<span class="lt-sub">Mastery grows through use</span>`;
+    stack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4700);
+  });
+}
+
+function showTraitToasts(newTraits){
+  if (!newTraits || !newTraits.length) return;
+  playLevelUpChime();
+  const stack = document.getElementById('toast-stack');
+  newTraits.forEach(t => {
+    const toast = document.createElement('div');
+    toast.className = 'level-toast';
+    toast.innerHTML = `★ Trait unlocked: ${escapeHtml(t.display_name)}<span class="lt-sub">${escapeHtml(t.description || '')}</span>`;
+    stack.appendChild(toast);
+    setTimeout(() => toast.remove(), 5200);
+  });
+}
+
+function showCivicSettlementToast(settlement){
+  if (!settlement || !(settlement.shops || []).length || !settlement.total_shop_profit_copper) return;
+  const stack = document.getElementById('toast-stack');
+  const toast = document.createElement('div');
+  toast.className = 'level-toast';
+  const heading = currentLanguage === 'en' ? 'Shop income settled' : 'سُوّيت أرباح المتاجر';
+  const detail = currentLanguage === 'en'
+    ? `${settlement.shops.length} shop(s) paid ${formatCopper(settlement.total_shop_profit_copper)} into the ledger.`
+    : `${settlement.shops.length} متجرًا أضاف ${formatCopper(settlement.total_shop_profit_copper)} إلى دفتر القيود.`;
+  toast.innerHTML = `◈ ${escapeHtml(heading)}<span class="lt-sub">${escapeHtml(detail)}</span>`;
+  stack.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+}
+
+const RISK_CLASS = { LOW: 'risk-low', MEDIUM: 'risk-medium', HIGH: 'risk-high', VERY_HIGH: 'risk-very_high' };
+
+function renderEventPanel(container, event){
+  if (!event) return;
+  playEventChime();
+
+  const panel = document.createElement('div');
+  panel.className = 'event-panel';
+
+  const consequenceItems = [];
+  Object.entries(event.xp_awarded || {}).forEach(([key, info]) => {
+    const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    consequenceItems.push(`<span class="ec-item ec-pos">+${info.gained} ${escapeHtml(label)} XP</span>`);
+  });
+  Object.entries(event.faction_shifts || {}).forEach(([name, shift]) => {
+    Object.entries(shift).forEach(([k, v]) => {
+      if (v) consequenceItems.push(`<span class="ec-item ${v > 0 ? 'ec-pos' : 'ec-neg'}">${v > 0 ? '+' : ''}${v} ${escapeHtml(name)} ${k}</span>`);
+    });
+  });
+  Object.entries(event.retainer_shifts || {}).forEach(([name, shift]) => {
+    Object.entries(shift).forEach(([k, v]) => {
+      if (v) consequenceItems.push(`<span class="ec-item ${v > 0 ? 'ec-pos' : 'ec-neg'}">${v > 0 ? '+' : ''}${v} ${escapeHtml(name)} ${k}</span>`);
+    });
+  });
+  (event.quests_updated || []).forEach(qid => {
+    consequenceItems.push(`<span class="ec-item">Quest updated: ${escapeHtml(qid)}</span>`);
+  });
+
+  panel.innerHTML = `
+    <div class="event-seal"><span class="es-dot"></span>${escapeHtml(event.type || (event.decisive ? 'Decisive Turn' : 'Important Turn'))}</div>
+    <div class="event-title">${escapeHtml(event.title || 'A Turning Point')}</div>
+    ${event.summary ? `<p class="event-summary">${escapeHtml(event.summary)}</p>` : ''}
+    ${consequenceItems.length ? `<div class="event-consequences">${consequenceItems.join('')}</div>` : ''}
+    ${(event.actions && event.actions.length) ? `<div class="action-chips">${event.actions.map(a => {
+      const riskClass = RISK_CLASS[(a.risk || '').toUpperCase()] || '';
+      return `<button type="button" class="action-chip" data-label="${escapeHtml(a.label)}">${escapeHtml(a.label)}${a.risk ? `<span class="risk-tag ${riskClass}">${escapeHtml(a.risk)}</span>` : ''}</button>`;
+    }).join('')}</div>` : ''}
+  `;
+
+  container.appendChild(panel);
+
+  panel.querySelectorAll('.action-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      actionEl.value = chip.getAttribute('data-label');
+      actionEl.dispatchEvent(new Event('input'));
+      actionEl.focus();
+    });
+  });
+}
+
+async function submitAction() {
+  const input = document.getElementById('action');
+  const action = input.value.trim();
+  if (!action) return;
+
+  const sendBtn = document.getElementById('send');
+  const empty = document.getElementById('empty-state');
+  if (empty) empty.remove();
+
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  const game = document.getElementById('game');
+  const isCmd = action.startsWith('/');
+
+  const turnDiv = document.createElement('div');
+  turnDiv.className = 'turn';
+
+  if (isCmd) {
+    turnDiv.innerHTML = `
+      <div class="command-line">${escapeHtml(action)}</div>
+      <div class="system-panel">
+        <span class="tag">Consulting the ledger…</span>
+      </div>
+    `;
+  } else {
+    turnCount++;
+    turnDiv.innerHTML = `
+      <div class="turn-marker">
+        <div class="seal">${turnCount}</div>
+        <div class="turn-line"></div>
+      </div>
+      <div class="player-line">${escapeHtml(action)}</div>
+      <div class="page">
+        <div class="thinking"><span class="flame"></span><span>${t('narrating')}</span><span class="thinking-timer">${t('elapsed')}: 0s</span></div>
+      </div>
+    `;
+  }
+
+  game.appendChild(turnDiv);
+  turnDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  const waitStartedAt = performance.now();
+  const waitTimerEl = turnDiv.querySelector('.thinking-timer');
+  const waitTimer = isCmd ? null : window.setInterval(() => {
+    if (!waitTimerEl) return;
+    const seconds = Math.max(1, Math.floor((performance.now() - waitStartedAt) / 1000));
+    waitTimerEl.textContent = `${t('elapsed')}: ${seconds}s`;
+  }, 400);
+
+  try {
+    const response = await fetch('/play', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, language: currentLanguage })
+    });
+
+    const data = await response.json();
+
+    if (isCmd) {
+      const panel = turnDiv.querySelector('.system-panel');
+      if (!response.ok || data.error) {
+        panel.classList.add('error');
+        panel.innerHTML = `<span class="tag">Error</span>${escapeHtml(data.error || 'unknown error')}`;
+      } else {
+        const kind = (data.kind || 'command').toUpperCase();
+        panel.innerHTML = `<span class="tag">${escapeHtml(kind)}</span>${escapeHtml(data.response)}`;
+      }
+      return;
+    }
+
+    const pageDiv = turnDiv.querySelector('.page');
+
+    if (!response.ok || data.error) {
+      pageDiv.innerHTML = `<p style="color:#7a2320; font-style:italic;">The chronicle falters: ${escapeHtml(data.error || 'unknown error')}</p>`;
+    } else {
+      if (data.turn) {
+        turnDiv.querySelector('.seal').textContent = data.turn;
+        updateTurnIndicator(data.turn);
+      }
+      revealText(pageDiv, data.response);
+      showLevelUpToasts(data.level_ups);
+      showTraitToasts(data.new_traits);
+      showCivicSettlementToast(data.civic_settlement);
+      showTimeProgressionToast(data.time_progression, data.arrived_characters);
+      if (data.event) {
+        renderEventPanel(turnDiv, data.event);
+      }
+    }
+  } catch (err) {
+    const target = isCmd
+      ? turnDiv.querySelector('.system-panel')
+      : turnDiv.querySelector('.page');
+    target.innerHTML = isCmd
+      ? `<span class="tag">Error</span>The chronicle could not be reached.`
+      : `<p style="color:#7a2320; font-style:italic;">The chronicle could not be reached. Check your connection and try again.</p>`;
+    document.getElementById('conn-indicator').textContent = 'Chronicle disconnected';
+  } finally {
+    if (waitTimer) window.clearInterval(waitTimer);
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+setLanguage(currentLanguage);
+
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+</script>
+
+</body>
+</html>
